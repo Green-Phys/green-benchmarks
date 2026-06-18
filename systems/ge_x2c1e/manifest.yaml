@@ -1,0 +1,57 @@
+# Ge, all-electron + full one-electron X2C (spinor path).
+# Replaces α-Sn as the spinor-path benchmark — Ge is cheaper and small
+# enough to be turnaround-friendly on a single allocation, while still
+# exercising the spinor build of `build_X_kspace_from_ao_reps`
+# (spinor=True for lowdin and symmetric_lowdin).
+#
+# This is the only system in the suite that lights up the spinor code
+# path. If it regresses while ge_sfx2c1e does not, suspect the
+# spinor-branch of the orthogonalization layer.
+
+system:
+  name: ge_x2c1e
+  kind: solid
+  geometry:
+    lattice:
+      a: 5.658
+      vectors:
+        - [0.0, 0.5, 0.5]
+        - [0.5, 0.0, 0.5]
+        - [0.5, 0.5, 0.0]
+    atoms:
+      - { element: Ge, frac: [0.00, 0.00, 0.00] }
+      - { element: Ge, frac: [0.25, 0.25, 0.25] }
+  pseudo: none
+  relativistic: x2c1e       # full X2C; spinor wavefunction
+
+basis:
+  name: x2c-tzvpall
+  auxbasis: x2c-tzvpall-jkfit
+
+mesh:
+  k: [4, 4, 4]
+  beta: 1000
+  grid_file: ir/1e4.h5
+
+methods:
+  # All-electron Ge x2c1e: MP2 is omitted by request.
+  # orth_spinor on gw makes the spinor-branch intent explicit; the
+  # x2c1e system+method combination must light up the spinor codepath.
+  - { type: hf, itermax: 1 }
+  - { type: gw, itermax: 50, threshold: 1.0e-9, orth_spinor: true }
+
+observables:
+  - { id: total_energy,    units: Ha, since: 0.3.0 }
+  - { id: hf_energy,       units: Ha, since: 0.3.0 }
+  - { id: gw_corr,         units: Ha, since: 0.3.0 }
+  - { id: indirect_gap,    units: eV, since: 0.3.0 }
+  - { id: direct_gap_gamma,units: eV, since: 0.3.0 }
+  - { id: soc_splitting_vbm, units: eV, since: 0.3.0 }   # spinor signature
+  - { id: vbm,             units: eV, since: 0.3.0 }
+  - { id: cbm,             units: eV, since: 0.3.0 }
+
+resources:
+  nodes: 4
+  ranks_per_node: 32
+  walltime: "18:00:00"
+  partition: TBD

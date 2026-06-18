@@ -1,0 +1,52 @@
+# Ge, all-electron + scalar relativistic (sfx2c1e).
+# This benchmark is the headline reason this repo exists: it exercises
+# the X2C-scalar code path end-to-end, which the H2/cc-pVDZ unit test
+# in green-mbpt/test/solvers_test.cpp cannot reach.
+#
+# Reference numbers exist in the literature for Ge GW band gap at this
+# level; see ADMIN.md when a discrepancy is reported.
+
+system:
+  name: ge_sfx2c1e
+  kind: solid
+  geometry:
+    lattice:
+      a: 5.658              # Å, experimental Ge lattice constant
+      vectors:
+        - [0.0, 0.5, 0.5]
+        - [0.5, 0.0, 0.5]
+        - [0.5, 0.5, 0.0]
+    atoms:
+      - { element: Ge, frac: [0.00, 0.00, 0.00] }
+      - { element: Ge, frac: [0.25, 0.25, 0.25] }
+  pseudo: none              # all-electron
+  relativistic: sfx2c1e     # scalar-relativistic X2C
+
+basis:
+  name: x2c-tzvpall-s
+  auxbasis: x2c-tzvpall-s-jkfit
+
+mesh:
+  k: [4, 4, 4]
+  beta: 1000
+  grid_file: ir/1e4.h5
+
+methods:
+  # All-electron Ge: MP2 is omitted by request (cost vs. value).
+  - { type: hf, itermax: 1 }
+  - { type: gw, itermax: 50, threshold: 1.0e-9 }
+
+observables:
+  - { id: total_energy,    units: Ha, since: 0.3.0 }
+  - { id: hf_energy,       units: Ha, since: 0.3.0 }
+  - { id: gw_corr,         units: Ha, since: 0.3.0 }
+  - { id: indirect_gap,    units: eV, since: 0.3.0 }
+  - { id: direct_gap_gamma,units: eV, since: 0.3.0 }
+  - { id: vbm,             units: eV, since: 0.3.0 }
+  - { id: cbm,             units: eV, since: 0.3.0 }
+
+resources:
+  nodes: 4
+  ranks_per_node: 32
+  walltime: "12:00:00"
+  partition: TBD
