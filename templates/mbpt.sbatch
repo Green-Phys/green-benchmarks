@@ -25,20 +25,32 @@ cd "$WORK"
 export OMP_NUM_THREADS=${SLURM_CPUS_PER_TASK:-1}
 export MKL_NUM_THREADS=${SLURM_CPUS_PER_TASK:-1}
 
-# Drive method list out of the manifest. Each method is one mbpt invocation;
-# they share $INPUT and append into $WORK/out.h5 under a per-method group.
-methods=$(python -c "
-import yaml, sys
-with open('$MANIFEST') as f: m = yaml.safe_load(f)
-print(' '.join(x['type'] for x in m['methods']))
+# Inputs are the init phase outputs (absolute paths so $WORK can move).
+INIT_DIR="$BENCH_SCRATCH/$SYSTEM/init"
+DF_INT="$INIT_DIR/df_int"
+DF_HF_INT="$INIT_DIR/df_hf_int"
+
+# Pull method list and grid file out of the manifest in one shot.
+read -r METHODS GRID_FILE < <(python -c "
+import yaml
+m = yaml.safe_load(open('$MANIFEST'))
+methods = ' '.join(x['type'].upper() for x in m['methods'])   # hf,mp2,gw -> HF,MP2,GW
+grid    = m.get('mesh', {}).get('grid_file', 'ir/1e4.h5')
+print(methods, grid)
 ")
-for method in $methods; do
-    echo "=== mbpt $GREEN_VER on $SYSTEM :: $method ==="
-    # Binary lives at $GREEN_ROOT/bin/mbpt.exe (already on PATH).
-    # TODO confirm CLI flags via `mbpt.exe --help` on pauli.
+
+for scf_type in $METHODS; do
+    echo "=== mbpt $GREEN_VER on $SYSTEM :: $scf_type ==="
+    OUT="$WORK/out_${scf_type,,}.h5"
+    # Binary lives at $GREEN_ROOT/bin/mbpt.exe (on PATH via activate_env.sh).
+    # Other params (mixing, diis, itermax, threshold, …) take mbpt.exe defaults.
     srun mbpt.exe \
-        --scf_type   "$method" \
-        --input    "$INPUT" \
-        --manifest "$MANIFEST" \
-        --out      "$WORK/out.h5"
+        --verbose          4 \
+        --scf_type         "$scf_type" \
+        --input_file       "$INPUT" \
+        --dfintegral_file  "$DF_INT" \
+        --dfintegral_hf_file "$DF_HF_INT" \
+        --grid_file        "$GRID_FILE" \
+        --results_file     "$OUT" \
+        --restart          false
 done
