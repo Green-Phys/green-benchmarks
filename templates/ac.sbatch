@@ -27,7 +27,8 @@ export MKL_NUM_THREADS=${SLURM_CPUS_PER_TASK:-1}
 
 # TODO confirm exact AC entry-point. Nevanlinna is the default for
 # green-mbtools (no external C++ deps beyond the in-tree extension).
-python -m green_mbtools.ac \
+# AC runs under MPI (ntasks-per-node>1) with OMP threading per rank.
+srun --mpi=pmi2 python -m green_mbtools.ac \
     --input  "$MBPT_OUT" \
     --output "$WORK/spectral.h5" \
     --method nevanlinna

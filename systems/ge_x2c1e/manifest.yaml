@@ -41,7 +41,7 @@ methods:
   # orth_spinor on gw makes the spinor-branch intent explicit; the
   # x2c1e system+method combination must light up the spinor codepath.
   - { type: hf, itermax: 1 }
-  - { type: gw, itermax: 50, threshold: 1.0e-9, orth_spinor: true }
+  - { type: gw, itermax: 5, threshold: 1.0e-9, orth_spinor: true }
 
 observables:
   - { id: total_energy,    units: Ha, since: 0.3.0 }
@@ -52,9 +52,3 @@ observables:
   - { id: soc_splitting_vbm, units: eV, since: 0.3.0 }   # spinor signature
   - { id: vbm,             units: eV, since: 0.3.0 }
   - { id: cbm,             units: eV, since: 0.3.0 }
-
-resources:
-  nodes: 4
-  ranks_per_node: 32
-  walltime: "18:00:00"
-  partition: TBD

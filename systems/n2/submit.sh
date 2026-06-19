@@ -20,12 +20,12 @@ INIT_JID=$(sbatch --parsable --export="$EXPORTS" \
     "$BENCH_ROOT/templates/init.sbatch")
 MBPT_JID=$(sbatch --parsable --export="$EXPORTS" \
     --dependency=afterok:$INIT_JID \
-    --nodes=1 --ntasks-per-node=8 --time=00:30:00 \
+    --nodes=2 --ntasks-per-node=48 --cpus-per-task=2 --exclusive --time=00:30:00 \
     --partition="$SLURM_PARTITION_MBPT" \
     "$BENCH_ROOT/templates/mbpt.sbatch")
 AC_JID=$(sbatch --parsable --export="$EXPORTS" \
     --dependency=afterok:$MBPT_JID \
-    --nodes=1 --ntasks-per-node=1 --cpus-per-task=4 --time=00:15:00 \
+    --nodes=1 --ntasks-per-node=32 --cpus-per-task=2 --time=00:15:00 \
     --partition="$SLURM_PARTITION_AUX" \
     "$BENCH_ROOT/templates/ac.sbatch")
 

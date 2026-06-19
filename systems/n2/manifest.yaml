@@ -43,9 +43,3 @@ observables:
   - { id: homo,          units: eV, since: 0.3.0 }
   - { id: lumo,          units: eV, since: 0.3.0 }
   - { id: ip_koopmans,   units: eV, since: 0.3.0 }
-
-resources:
-  nodes: 1
-  ranks_per_node: 8
-  walltime: "00:30:00"
-  partition: TBD            # filled in once pauli queue is named

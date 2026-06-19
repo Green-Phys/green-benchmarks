@@ -44,9 +44,3 @@ observables:
   - { id: direct_gap_gamma,units: eV, since: 0.3.0 }
   - { id: vbm,             units: eV, since: 0.3.0 }
   - { id: cbm,             units: eV, since: 0.3.0 }
-
-resources:
-  nodes: 2
-  ranks_per_node: 16
-  walltime: "04:00:00"
-  partition: TBD

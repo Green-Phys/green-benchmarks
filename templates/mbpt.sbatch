@@ -22,7 +22,8 @@ WORK="$BENCH_SCRATCH/$SYSTEM/mbpt/$GREEN_VER"
 mkdir -p "$WORK"
 cd "$WORK"
 
-export OMP_NUM_THREADS=1   # MPI-bound; threading off for predictable scaling
+export OMP_NUM_THREADS=${SLURM_CPUS_PER_TASK:-1}
+export MKL_NUM_THREADS=${SLURM_CPUS_PER_TASK:-1}
 
 # Drive method list out of the manifest. Each method is one mbpt invocation;
 # they share $INPUT and append into $WORK/out.h5 under a per-method group.

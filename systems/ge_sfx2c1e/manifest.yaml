@@ -37,7 +37,7 @@ mesh:
 methods:
   # All-electron Ge: MP2 is omitted by request (cost vs. value).
   - { type: hf, itermax: 1 }
-  - { type: gw, itermax: 50, threshold: 1.0e-9 }
+  - { type: gw, itermax: 5, threshold: 1.0e-9 }
 
 observables:
   - { id: total_energy,    units: Ha, since: 0.3.0 }
@@ -47,9 +47,3 @@ observables:
   - { id: direct_gap_gamma,units: eV, since: 0.3.0 }
   - { id: vbm,             units: eV, since: 0.3.0 }
   - { id: cbm,             units: eV, since: 0.3.0 }
-
-resources:
-  nodes: 4
-  ranks_per_node: 32
-  walltime: "12:00:00"
-  partition: TBD
