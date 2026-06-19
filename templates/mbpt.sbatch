@@ -34,10 +34,10 @@ print(' '.join(x['type'] for x in m['methods']))
 ")
 for method in $methods; do
     echo "=== mbpt $GREEN_VER on $SYSTEM :: $method ==="
-    # TODO confirm exact mbpt CLI on pauli; this assumes
-    # `mbpt --method <hf|mp2|gw> --input <h5> --manifest <yaml> --out <h5>`
-    srun --mpi=pmi2 mbpt \
-        --method   "$method" \
+    # Binary lives at $GREEN_ROOT/bin/mbpt.exe (already on PATH).
+    # TODO confirm CLI flags via `mbpt.exe --help` on pauli.
+    srun mbpt.exe \
+        --scf_type   "$method" \
         --input    "$INPUT" \
         --manifest "$MANIFEST" \
         --out      "$WORK/out.h5"
