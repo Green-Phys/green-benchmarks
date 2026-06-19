@@ -14,7 +14,6 @@
 #             exit 0 on success; non-zero aborts the chain
 
 #SBATCH --job-name=bench-init
-#SBATCH --output=%x-%j.out
 
 set -euo pipefail
 source "$BENCH_ROOT/env.sh"

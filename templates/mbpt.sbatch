@@ -11,7 +11,6 @@
 #              parseable log alongside, exit 0 on success
 
 #SBATCH --job-name=bench-mbpt
-#SBATCH --output=%x-%j.out
 
 set -euo pipefail
 source "$BENCH_ROOT/env.sh"

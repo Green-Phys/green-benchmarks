@@ -11,7 +11,6 @@
 #              + results JSON via tools/extract_results.py
 
 #SBATCH --job-name=bench-ac
-#SBATCH --output=%x-%j.out
 
 set -euo pipefail
 source "$BENCH_ROOT/env.sh"
