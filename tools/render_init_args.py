@@ -81,15 +81,11 @@ def render(manifest: dict) -> list[str]:
             args += ["--nk", " ".join(str(x) for x in mesh["k"])]
     else:
         args += ["--atom", _atom_lines_molecular(sys_["geometry"])]
-        if "charge" in sys_:
-            args += ["--charge", str(sys_["charge"])]
         if "spin" in sys_:
             args += ["--spin", str(sys_["spin"])]
 
     if "beta" in mesh:
         args += ["--beta", str(mesh["beta"])]
-    if "grid_file" in mesh:
-        args += ["--grid_file", mesh["grid_file"]]
 
     args += ["--df_int", "1"]
     return args
