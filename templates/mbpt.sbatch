@@ -31,12 +31,12 @@ DF_INT="$INIT_DIR/df_int"
 DF_HF_INT="$INIT_DIR/df_hf_int"
 
 # Pull method list and grid file out of the manifest in one shot.
-read -r METHODS GRID_FILE < <(python -c "
+read -r METHODS GRID_FILE BETA < <(python -c "
 import yaml
 m = yaml.safe_load(open('$MANIFEST'))
 methods = ' '.join(x['type'].upper() for x in m['methods'])   # hf,mp2,gw -> HF,MP2,GW
-grid    = m.get('mesh', {}).get('grid_file', 'ir/1e4.h5')
-print(methods, grid)
+mesh    = m.get('mesh', {})
+print(methods, mesh.get('grid_file', 'ir/1e4.h5'), mesh.get('beta', 100))
 ")
 
 for scf_type in $METHODS; do
@@ -51,6 +51,7 @@ for scf_type in $METHODS; do
         --dfintegral_file  "$DF_INT" \
         --dfintegral_hf_file "$DF_HF_INT" \
         --grid_file        "$GRID_FILE" \
+        --BETA             "$BETA" \
         --results_file     "$OUT" \
         --restart          false
 done
