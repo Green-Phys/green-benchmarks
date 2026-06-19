@@ -33,7 +33,7 @@ mesh:
 
 methods:
   - { type: hf,  itermax: 1 }
-  - { type: mp2, itermax: 1 }
+  - { type: gf2, itermax: 1 }
   - { type: gw,  itermax: 30, threshold: 1.0e-7 }
 
 observables:

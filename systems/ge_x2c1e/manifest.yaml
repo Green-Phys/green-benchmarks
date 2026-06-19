@@ -37,7 +37,7 @@ mesh:
   grid_file: ir/1e4.h5
 
 methods:
-  # All-electron Ge x2c1e: MP2 is omitted by request.
+  # All-electron Ge x2c1e: GF2 is omitted by request.
   # orth_spinor on gw makes the spinor-branch intent explicit; the
   # x2c1e system+method combination must light up the spinor codepath.
   - { type: hf, itermax: 1 }

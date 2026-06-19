@@ -35,7 +35,7 @@ mesh:
   grid_file: ir/1e4.h5
 
 methods:
-  # All-electron Ge: MP2 is omitted by request (cost vs. value).
+  # All-electron Ge: GF2 is omitted by request (cost vs. value).
   - { type: hf, itermax: 1 }
   - { type: gw, itermax: 5, threshold: 1.0e-9 }
 

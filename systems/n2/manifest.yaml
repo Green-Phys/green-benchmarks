@@ -29,16 +29,16 @@ mesh:
   grid_file: ir/1e4.h5
 
 methods:
-  # All systems run hf + gw. N2 and Si additionally get a single-iter MP2
+  # All systems run hf + gw. N2 and Si additionally get a single-iter GF2
   # as a cheap correlation cross-check.
   - { type: hf,  itermax: 1 }
-  - { type: mp2, itermax: 1 }
+  - { type: gf2, itermax: 1 }
   - { type: gw,  itermax: 30, threshold: 1.0e-7 }
 
 observables:
   - { id: total_energy,  units: Ha, since: 0.3.0 }
   - { id: hf_energy,     units: Ha, since: 0.3.0 }
-  - { id: mp2_corr,      units: Ha, since: 0.3.0 }
+  - { id: gf2_corr,      units: Ha, since: 0.3.0 }
   - { id: gw_corr,       units: Ha, since: 0.3.0 }
   - { id: homo,          units: eV, since: 0.3.0 }
   - { id: lumo,          units: eV, since: 0.3.0 }

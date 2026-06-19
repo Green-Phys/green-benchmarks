@@ -15,7 +15,7 @@ from _lib import load_manifest
 REQUIRED_TOP = ["system", "basis", "mesh", "methods", "observables"]
 ALLOWED_KIND = {"molecular", "solid"}
 ALLOWED_REL  = {"none", "sfx2c1e", "x2c1e"}
-ALLOWED_METHOD = {"hf", "mp2", "gw"}
+ALLOWED_METHOD = {"hf", "gf2", "gw"}
 
 
 def _check(cond: bool, msg: str, errs: list[str]) -> None:
