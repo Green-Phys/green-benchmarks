@@ -14,7 +14,7 @@ export MANIFEST="$BENCH_ROOT/systems/$SYSTEM/manifest.yaml"
 EXPORTS="ALL,BENCH_ROOT,BENCH_SCRATCH,SYSTEM,MANIFEST,GREEN_VER"
 
 INIT_JID=$(sbatch --parsable --export="$EXPORTS" \
-    --nodes=1 --ntasks-per-node=1 --cpus-per-task=4 --time=00:30:00 \
+    --nodes=1 --ntasks-per-node=1 --cpus-per-task=16 --time=00:30:00 \
     --partition="$SLURM_PARTITION_AUX" \
     "$BENCH_ROOT/templates/init.sbatch")
 MBPT_JID=$(sbatch --parsable --export="$EXPORTS" \

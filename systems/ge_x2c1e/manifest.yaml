@@ -25,8 +25,11 @@ system:
   relativistic: x2c1e       # full X2C; spinor wavefunction
 
 basis:
-  name: x2c-tzvpall
-  auxbasis: x2c-tzvpall-jkfit
+  name: x2c-svpall
+  auxbasis: x2c-svpall-jkfit
+
+init:
+  xc: pbe     # DFT-PBE mean-field starting point
 
 mesh:
   k: [4, 4, 4]

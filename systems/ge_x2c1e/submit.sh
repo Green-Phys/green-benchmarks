@@ -15,7 +15,7 @@ EXPORTS="ALL,BENCH_ROOT,BENCH_SCRATCH,SYSTEM,MANIFEST,GREEN_VER"
 
 # x2c1e spinor: roughly 1.5x the work of sfx2c1e.
 INIT_JID=$(sbatch --parsable --export="$EXPORTS" \
-    --nodes=1 --ntasks-per-node=1 --cpus-per-task=8 --time=01:30:00 \
+    --nodes=1 --ntasks-per-node=1 --cpus-per-task=16 --time=01:30:00 \
     --partition="$SLURM_PARTITION_AUX" \
     "$BENCH_ROOT/templates/init.sbatch")
 MBPT_JID=$(sbatch --parsable --export="$EXPORTS" \

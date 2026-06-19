@@ -23,8 +23,11 @@ system:
   relativistic: sfx2c1e     # scalar-relativistic X2C
 
 basis:
-  name: x2c-tzvpall-s
-  auxbasis: x2c-tzvpall-s-jkfit
+  name: x2c-svpall
+  auxbasis: x2c-svpall-jkfit
+
+init:
+  xc: pbe     # DFT-PBE mean-field starting point
 
 mesh:
   k: [4, 4, 4]

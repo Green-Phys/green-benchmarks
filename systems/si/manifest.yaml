@@ -20,8 +20,11 @@ system:
   relativistic: none
 
 basis:
-  name: gth-dzvp
-  auxbasis: gth-dzvp-jkfit
+  name: gth-dzvp-molopt-sr
+  auxbasis: none
+
+init:
+  xc: pbe     # DFT-PBE mean-field starting point for init_data_df.py
 
 mesh:
   k: [4, 4, 4]

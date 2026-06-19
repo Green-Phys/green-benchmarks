@@ -18,7 +18,10 @@ system:
 
 basis:
   name: cc-pvdz
-  auxbasis: cc-pvdz-ri
+  auxbasis: cc-pvdz-jkfit
+
+init:
+  xc: hf      # mean-field starting point for init_data_mol_df.py
 
 mesh:
   # mean-field temperature / imaginary-time grid for the GF2/GW solver
