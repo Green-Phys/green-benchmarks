@@ -29,14 +29,12 @@ INIT_DIR="$BENCH_SCRATCH/$SYSTEM/init"
 DF_INT="$INIT_DIR/df_int"
 DF_HF_INT="$INIT_DIR/df_hf_int"
 
-# Pull method list and grid file out of the manifest in one shot.
-read -r METHODS GRID_FILE BETA < <(python -c "
-import yaml
-m = yaml.safe_load(open('$MANIFEST'))
-methods = ' '.join(x['type'].upper() for x in m['methods'])   # hf,mp2,gw -> HF,MP2,GW
-mesh    = m.get('mesh', {})
-print(methods, mesh.get('grid_file', 'ir/1e4.h5'), mesh.get('beta', 100))
-")
+# Pull manifest values into separate vars (one python call per value
+# so whitespace inside a value can't poison the others).
+_yaml="import yaml,sys; m=yaml.safe_load(open('$MANIFEST'));"
+METHODS=$(python -c "$_yaml print(' '.join(x['type'].upper() for x in m['methods']))")
+GRID_FILE=$(python -c "$_yaml print(m.get('mesh',{}).get('grid_file','ir/1e4.h5'))")
+BETA=$(python -c "$_yaml print(m.get('mesh',{}).get('beta',100))")
 
 for scf_type in $METHODS; do
     echo "=== mbpt $GREEN_VER on $SYSTEM :: $scf_type ==="
