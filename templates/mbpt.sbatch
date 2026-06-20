@@ -34,13 +34,13 @@ BETA=$(python -c "$_yaml print(m.get('mesh',{}).get('beta',100))")
 
 # Inputs are the init phase outputs (absolute paths so $WORK can move).
 # Solids produce separate Coulomb / HF-exchange integral dirs; molecular
-# init produces a single dir, so hf and regular point at the same df_int.
+# init produces a single dir, so both point at the same df_hf_int.
 INIT_DIR="$BENCH_SCRATCH/$SYSTEM/init/$GREEN_VER"
-DF_INT="$INIT_DIR/df_int"
+DF_HF_INT="$INIT_DIR/df_hf_int"
 if [[ "$KIND" == solid ]]; then
-    DF_HF_INT="$INIT_DIR/df_hf_int"
+    DF_INT="$INIT_DIR/df_int"
 else
-    DF_HF_INT="$DF_INT"
+    DF_INT="$DF_HF_INT"
 fi
 
 for scf_type in $METHODS; do
