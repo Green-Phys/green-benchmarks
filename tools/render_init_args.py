@@ -45,6 +45,17 @@ def _atom_lines_solid(geom: dict) -> str:
     return "\n".join(lines)
 
 
+def _lattice_vectors(geom: dict) -> str:
+    """Real-space lattice translation vectors (a * unit vectors) in the
+    form green_mbtools' --a expects: comma-separated values, one vector per
+    line (parse_geometry passes the string through to pyscf's cell.a).
+    Note --a is the translation vectors, not the scalar lattice constant."""
+    import numpy as np
+    a = float(geom["lattice"]["a"])
+    vectors = np.asarray(geom["lattice"]["vectors"], dtype=float) * a
+    return "\n".join(f"{v[0]:.10f}, {v[1]:.10f}, {v[2]:.10f}" for v in vectors)
+
+
 def _atom_lines_molecular(geom: dict) -> str:
     lines = []
     for atm in geom["atoms"]:
@@ -75,10 +86,17 @@ def render(manifest: dict) -> list[str]:
     args += ["--x2c", str(X2C_MAP[sys_.get("relativistic", "none")])]
 
     if sys_["kind"] == "solid":
-        args += ["--a", str(sys_["geometry"]["lattice"]["a"])]
+        args += ["--a", _lattice_vectors(sys_["geometry"])]
         args += ["--atom", _atom_lines_solid(sys_["geometry"])]
         if "k" in mesh:
-            args += ["--nk", *(str(x) for x in mesh["k"])]
+            # --nk takes a single int (cubic NxNxN). The 3-value form is
+            # v100-only, so emit just the scalar for cross-version support.
+            k = mesh["k"]
+            kk = k if isinstance(k, (list, tuple)) else [k]
+            if len(set(kk)) != 1:
+                sys.exit(f"render_init_args: non-cubic k-mesh {k} needs the "
+                         "3-value --nk (v100-only); not supported here.")
+            args += ["--nk", str(kk[0])]
     else:
         args += ["--atom", _atom_lines_molecular(sys_["geometry"])]
         if "spin" in sys_:
