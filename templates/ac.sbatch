@@ -21,6 +21,13 @@ source "$BENCH_ROOT/tools/activate_env.sh"
 AC_INPUT="$BENCH_SCRATCH/$SYSTEM/mbpt/$GREEN_VER/out_gw.h5"
 WORK="$BENCH_SCRATCH/$SYSTEM/ac/$GREEN_VER"
 AC_OUTPUT="$WORK/ac_gw.h5"
+
+# ac.exe is resolved via PATH ($GREEN_AC is prepended in env.sh), same as
+# mbpt.exe. Sanity-check it exists up front so a missing/unset $GREEN_AC
+# fails with a clear message instead of a cryptic srun execve error.
+AC_BIN="${GREEN_AC:?GREEN_AC must point to the green-ac build dir in env.sh}/ac.exe"
+[[ -x "$AC_BIN" ]] || { echo "ac.exe not found or not executable at $AC_BIN" >&2; exit 1; }
+
 mkdir -p "$WORK"
 cd "$WORK"
 
@@ -49,7 +56,8 @@ srun ac.exe \
     --e_min       -1 \
     --e_max       0.5 \
     --n_omega     1501 \
-    --eta         0.005
+    --eta         0.005 \
+    --kind        Nevanlinna
 
 # Persist results JSON keyed by detected (mbpt-ver, mbtools-ver).
 python "$BENCH_ROOT/tools/extract_results.py" \
