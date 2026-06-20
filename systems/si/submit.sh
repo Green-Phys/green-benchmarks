@@ -13,7 +13,7 @@ source "$BENCH_ROOT/env.sh"
 export MANIFEST="$BENCH_ROOT/systems/$SYSTEM/manifest.yaml"
 EXPORTS="ALL,BENCH_ROOT,BENCH_SCRATCH,SYSTEM,MANIFEST,GREEN_VER"
 
-LOG_INIT="$BENCH_SCRATCH/$SYSTEM/init/bench-init-%j.out"
+LOG_INIT="$BENCH_SCRATCH/$SYSTEM/init/$GREEN_VER/bench-init-%j.out"
 LOG_MBPT="$BENCH_SCRATCH/$SYSTEM/mbpt/$GREEN_VER/bench-mbpt-%j.out"
 LOG_AC="$BENCH_SCRATCH/$SYSTEM/ac/$GREEN_VER/bench-ac-%j.out"
 mkdir -p "$(dirname "$LOG_INIT")" "$(dirname "$LOG_MBPT")" "$(dirname "$LOG_AC")"

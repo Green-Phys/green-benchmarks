@@ -6,7 +6,7 @@
 #
 # Contract (do not break):
 #   In env :   BENCH_ROOT, BENCH_SCRATCH, SYSTEM, MANIFEST, GREEN_VER
-#   In files:  $BENCH_SCRATCH/$SYSTEM/init/input.h5
+#   In files:  $BENCH_SCRATCH/$SYSTEM/init/$GREEN_VER/input.h5
 #   Out:       $BENCH_SCRATCH/$SYSTEM/mbpt/$GREEN_VER/out.h5
 #              parseable log alongside, exit 0 on success
 
@@ -16,7 +16,7 @@ set -euo pipefail
 source "$BENCH_ROOT/env.sh"
 source "$BENCH_ROOT/tools/activate_env.sh"
 
-INPUT="$BENCH_SCRATCH/$SYSTEM/init/input.h5"
+INPUT="$BENCH_SCRATCH/$SYSTEM/init/$GREEN_VER/input.h5"
 WORK="$BENCH_SCRATCH/$SYSTEM/mbpt/$GREEN_VER"
 mkdir -p "$WORK"
 cd "$WORK"
@@ -25,7 +25,7 @@ export OMP_NUM_THREADS=${SLURM_CPUS_PER_TASK:-1}
 export MKL_NUM_THREADS=${SLURM_CPUS_PER_TASK:-1}
 
 # Inputs are the init phase outputs (absolute paths so $WORK can move).
-INIT_DIR="$BENCH_SCRATCH/$SYSTEM/init"
+INIT_DIR="$BENCH_SCRATCH/$SYSTEM/init/$GREEN_VER"
 DF_INT="$INIT_DIR/df_int"
 DF_HF_INT="$INIT_DIR/df_hf_int"
 

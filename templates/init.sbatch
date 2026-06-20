@@ -10,7 +10,7 @@
 #
 # Contract (do not break):
 #   In env :  BENCH_ROOT, BENCH_SCRATCH, SYSTEM, MANIFEST, GREEN_VER
-#   Out:      $BENCH_SCRATCH/$SYSTEM/init/{input.h5, df_hf_int/, df_int/}
+#   Out:      $BENCH_SCRATCH/$SYSTEM/init/$GREEN_VER/{input.h5, df_hf_int/, df_int/}
 #             exit 0 on success; non-zero aborts the chain
 
 #SBATCH --job-name=bench-init
@@ -19,7 +19,7 @@ set -euo pipefail
 source "$BENCH_ROOT/env.sh"
 source "$BENCH_ROOT/tools/activate_env.sh"
 
-WORK="$BENCH_SCRATCH/$SYSTEM/init"
+WORK="$BENCH_SCRATCH/$SYSTEM/init/$GREEN_VER"
 mkdir -p "$WORK"
 cd "$WORK"
 

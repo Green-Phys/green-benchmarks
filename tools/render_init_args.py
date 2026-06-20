@@ -78,7 +78,7 @@ def render(manifest: dict) -> list[str]:
         args += ["--a", str(sys_["geometry"]["lattice"]["a"])]
         args += ["--atom", _atom_lines_solid(sys_["geometry"])]
         if "k" in mesh:
-            args += ["--nk", " ".join(str(x) for x in mesh["k"])]
+            args += ["--nk", *(str(x) for x in mesh["k"])]
     else:
         args += ["--atom", _atom_lines_molecular(sys_["geometry"])]
         if "spin" in sys_:
