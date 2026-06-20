@@ -47,10 +47,13 @@ Confirm both Green installs are reachable:
 source env.sh
 for v in v032 v100a0; do
   GREEN_VER=$v bash -c 'source tools/activate_env.sh && \
-      mbpt --version && \
-      python -c "import green_mbtools as g; print(g.__version__)"'
+      mbpt.exe --help && \
+      python -c "from importlib.metadata import version; print(version(\"green-mbtools\"))"'
 done
 ```
+
+`mbpt.exe` has no `--version`; `--help` prints the build's git hashes,
+which is enough to confirm the right install is on `PATH` for now.
 
 If either fails: stop. Do not proceed until both versions are
 loadable. The whole point of the suite is comparing across them.
@@ -64,7 +67,7 @@ The three job templates live under [`templates/`](templates):
 | File                       | Purpose                                                       |
 |----------------------------|---------------------------------------------------------------|
 | `templates/init.sbatch`    | pyscf mean-field + green-mbtools integral dump → `input.h5`   |
-| `templates/mbpt.sbatch`    | green-mbpt main calculation: HF, optionally MP2, then GW      |
+| `templates/mbpt.sbatch`    | green-mbpt main calculation: HF, optionally GF2, then GW      |
 | `templates/ac.sbatch`      | analytic continuation; finalizes the results JSON             |
 
 **Drop your pauli-specific job content into these three files**.
