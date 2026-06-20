@@ -24,17 +24,24 @@ cd "$WORK"
 export OMP_NUM_THREADS=${SLURM_CPUS_PER_TASK:-1}
 export MKL_NUM_THREADS=${SLURM_CPUS_PER_TASK:-1}
 
-# Inputs are the init phase outputs (absolute paths so $WORK can move).
-INIT_DIR="$BENCH_SCRATCH/$SYSTEM/init/$GREEN_VER"
-DF_INT="$INIT_DIR/df_int"
-DF_HF_INT="$INIT_DIR/df_hf_int"
-
 # Pull manifest values into separate vars (one python call per value
 # so whitespace inside a value can't poison the others).
 _yaml="import yaml,sys; m=yaml.safe_load(open('$MANIFEST'));"
+KIND=$(python -c "$_yaml print(m['system']['kind'])")
 METHODS=$(python -c "$_yaml print(' '.join(x['type'].upper() for x in m['methods']))")
 GRID_FILE=$(python -c "$_yaml print(m.get('mesh',{}).get('grid_file','ir/1e4.h5'))")
 BETA=$(python -c "$_yaml print(m.get('mesh',{}).get('beta',100))")
+
+# Inputs are the init phase outputs (absolute paths so $WORK can move).
+# Solids produce separate Coulomb / HF-exchange integral dirs; molecular
+# init produces a single dir, so hf and regular point at the same df_int.
+INIT_DIR="$BENCH_SCRATCH/$SYSTEM/init/$GREEN_VER"
+DF_INT="$INIT_DIR/df_int"
+if [[ "$KIND" == solid ]]; then
+    DF_HF_INT="$INIT_DIR/df_hf_int"
+else
+    DF_HF_INT="$DF_INT"
+fi
 
 for scf_type in $METHODS; do
     echo "=== mbpt $GREEN_VER on $SYSTEM :: $scf_type ==="
