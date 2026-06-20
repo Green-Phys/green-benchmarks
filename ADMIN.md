@@ -27,7 +27,7 @@ $EDITOR env.sh         # fill in TBD entries — see comments inside
 | Var                     | What                                                       |
 |-------------------------|------------------------------------------------------------|
 | `BENCH_ROOT`            | absolute path of this repo on pauli                        |
-| `BENCH_SCRATCH`         | scratch root (writable, large; one subdir per system)      |
+| `BENCH_SCRATCH`         | scratch root for heavy outputs (large/writable, e.g. `/pauli-storage`) |
 | `SLURM_PARTITION_MBPT`  | fast pauli queue used for the heavy MBPT job               |
 | `SLURM_PARTITION_AUX`   | regular pauli queue for init (MF + integrals) and AC       |
 | `SLURM_ACCOUNT`         | optional, comment out if unused                            |
@@ -98,19 +98,32 @@ python tools/verify_manifest.py systems/*/manifest.yaml
 ### 2.2 Submit the four-system suite, for each version
 
 ```bash
-for s in n2 si ge_sfx2c1e ge_x2c1e; do
-  for v in v032 v100a0; do
-    GREEN_VER=$v bash systems/$s/submit.sh
-  done
-done
+bash tools/run_all.sh
 ```
 
-Each invocation queues three SLURM jobs (init → mbpt → ac) with
-`afterok` dependencies. The `ac.sbatch` step is the one that writes
-`systems/<sys>/results/<mbpt-ver>_<mbtools-ver>.json`, so a partial
-chain produces no results — by design.
+This loops every system × version and submits each as an init → mbpt →
+ac chain (`sbatch --dependency=afterok`). Submit a subset with env vars:
+
+```bash
+SYSTEMS="si n2" VERSIONS="v032" bash tools/run_all.sh
+```
+
+Where the data goes:
+
+- **Heavy outputs** (`input.h5`, `out_*.h5`, `ac_*.h5`) live under
+  `$BENCH_SCRATCH` (e.g. `/pauli-storage`), never in the repo.
+- The **`ac.sbatch`** step (last in the chain) extracts a small JSON
+  summary into `systems/<sys>/results/<mbpt-ver>_<mbtools-ver>.json`
+  **inside this repo checkout** — that JSON is the only thing committed.
+
+Because the summary is written by the last job, a partial chain produces
+no results JSON — by design.
 
 ### 2.3 Aggregate and report
+
+Run this on pauli, in the same checkout the jobs wrote into:
+`collect.py` walks `systems/*/results/*.json` (the committed summaries
+the ac jobs populated) and regenerates `RESULTS.md`.
 
 ```bash
 python tools/collect.py           > RESULTS.md
@@ -139,8 +152,10 @@ git push
 1. `mkdir -p systems/<new>/results`
 2. Write `systems/<new>/manifest.yaml`. Run
    `python tools/verify_manifest.py systems/<new>/manifest.yaml`.
-3. Write `systems/<new>/generate.py` — must produce `input.h5`
-   from the manifest alone.
+3. Inputs are generated from the manifest automatically by
+   `init.sbatch` (via `tools/render_init_args.py` → Green's
+   `init_data_(mol_)df.py`). If the manifest needs a new field, teach
+   `render_init_args.py` to map it — there is no per-system generator.
 4. Copy an existing `submit.sh` (closest workload size), adjust the
    `SYSTEM` name and the per-phase sbatch resource flags.
 5. Add a row to the README's system table.

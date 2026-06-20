@@ -1,9 +1,10 @@
 #!/usr/bin/env python3
 """Parse a finished green-mbpt run and persist a results JSON.
 
-Called at the end of every systems/<sys>/run.sh. Reads:
+Called at the end of templates/ac.sbatch. Reads:
   - the manifest (for the canonical observable id list + units)
-  - whatever green-mbpt wrote into $WORK (typically out.h5 + a log)
+  - whatever green-mbpt/green-ac wrote into $BENCH_SCRATCH/<sys> (the
+    mbpt out_*.h5, the ac ac_*.h5, and logs)
 
 Writes systems/<sys>/results/<mbpt-ver>_<mbtools-ver>.json via
 _lib.write_result so the schema stays consistent across systems.

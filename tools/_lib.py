@@ -1,8 +1,8 @@
 """Shared utilities for the benchmark scripts.
 
-Kept deliberately small. Per-system generate.py / run.sh scripts are
-the source of truth for any system-specific behavior; this module only
-holds plumbing that would otherwise be copy-pasted four times.
+Kept deliberately small. Per-system submit.sh scripts are the source of
+truth for any system-specific behavior; this module only holds plumbing
+that would otherwise be copy-pasted four times.
 """
 from __future__ import annotations
 
