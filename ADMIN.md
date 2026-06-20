@@ -188,6 +188,11 @@ existing four do not.
 - Result filenames: `<mbpt-ver>_<mbtools-ver>.json` (e.g.
   `0.3.2_0.3.0.json`, `1.0.0a0_1.0.0a0.json`). Slightly clunky but
   unambiguous; can be made more friendly later.
+  - The **mbpt version is parsed from the `$GREEN_ROOT` directory name**
+    (e.g. `mbpt-cpu-install-v0.3.2` → `0.3.2`), since `mbpt.exe` exposes
+    only git hashes, not a release. **Keep the version in that path**; if
+    it's absent the filename falls back to `$GREEN_VER`, then `unknown`.
+    mbtools comes from its installed package version.
 - All JSON keys for observables match the manifest's `observables[].id`.
 - Timing keys go under `timings:` in the JSON, separate from physical
   observables. They are tracked but never gate a release.
