@@ -46,11 +46,15 @@ fi
 for scf_type in $METHODS; do
     echo "=== mbpt $GREEN_VER on $SYSTEM :: $scf_type ==="
     OUT="$WORK/out_${scf_type,,}.h5"
+    # itermax from the manifest's per-method spec; mbpt.exe defaults to 1,
+    # which silently under-converges GW.
+    ITERMAX=$(python -c "$_yaml print(next((x.get('itermax',1) for x in m['methods'] if x['type'].upper()=='$scf_type'),1))")
     # Binary lives at $GREEN_ROOT/bin/mbpt.exe (on PATH via activate_env.sh).
-    # Other params (mixing, diis, itermax, threshold, …) take mbpt.exe defaults.
+    # Other params (mixing, diis, threshold, …) take mbpt.exe defaults.
     srun mbpt.exe \
         --verbose          4 \
         --scf_type         "$scf_type" \
+        --itermax          "$ITERMAX" \
         --input_file       "$INPUT" \
         --dfintegral_file  "$DF_INT" \
         --dfintegral_hf_file "$DF_HF_INT" \
