@@ -38,6 +38,7 @@ methods:
 observables:
   - { id: total_energy,  units: Ha, since: 0.3.0 }
   - { id: hf_energy,     units: Ha, since: 0.3.0 }
+  - { id: one_body_energy, units: Ha, since: 0.3.0 }
   - { id: gf2_corr,      units: Ha, since: 0.3.0 }
   - { id: gw_corr,       units: Ha, since: 0.3.0 }
   - { id: homo,          units: eV, since: 0.3.0 }
