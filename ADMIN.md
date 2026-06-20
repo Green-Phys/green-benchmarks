@@ -33,6 +33,7 @@ $EDITOR env.sh         # fill in TBD entries — see comments inside
 | `SLURM_ACCOUNT`         | optional, comment out if unused                            |
 | `GREEN_ROOT_V032`       | install prefix for green-mbpt 0.3.2 binaries               |
 | `GREEN_ROOT_V100A0`     | install prefix for green-mbpt 1.0.0a0 binaries             |
+| `GREEN_AC`              | dir with `ac.exe` (green-ac build; same across versions)   |
 | `MBTOOLS_V032_CONDA_ENV`| conda env name for green-mbtools 0.3.0 (e.g. `mbtools-v0.3.0`) |
 | `MBTOOLS_V100A0_CONDA_ENV` | conda env name for green-mbtools 1.0.0a0               |
 | `CONDA_BASE`            | conda installation root (`$HOME/miniconda3`, `/opt/conda`) |

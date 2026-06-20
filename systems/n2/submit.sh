@@ -32,7 +32,7 @@ MBPT_JID=$(sbatch --parsable --export="$EXPORTS" \
     "$BENCH_ROOT/templates/mbpt.sbatch")
 AC_JID=$(sbatch --parsable --export="$EXPORTS" \
     --dependency=afterok:$MBPT_JID \
-    --nodes=1 --ntasks-per-node=32 --cpus-per-task=2 --time=00:15:00 \
+    --nodes=1 --ntasks-per-node=1 --cpus-per-task=2 --time=00:15:00 \
     --partition="$SLURM_PARTITION_AUX" \
     --output="$LOG_AC" \
     "$BENCH_ROOT/templates/ac.sbatch")

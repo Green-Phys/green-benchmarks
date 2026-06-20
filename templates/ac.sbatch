@@ -1,13 +1,15 @@
 #!/bin/bash
 # templates/ac.sbatch — ANALYTIC CONTINUATION job.
 #
-# Pure-python phase (green-mbtools nevanlinna/caratheodory). Like init,
-# this is single-task with multi-threaded BLAS via cpus-per-task.
+# MPI C++ binary (green-ac/ac.exe) — continues the mbpt GW Green's
+# function G_tau to real frequency. ac.exe is version-independent, so
+# its build dir is on PATH via $GREEN_AC in env.sh (not activate_env.sh,
+# which is per-version). Solids run under MPI; molecular uses 1 task.
 #
 # Contract (do not break):
 #   In env :   BENCH_ROOT, BENCH_SCRATCH, SYSTEM, MANIFEST, GREEN_VER
-#   In files:  $BENCH_SCRATCH/$SYSTEM/mbpt/$GREEN_VER/out.h5
-#   Out:       $BENCH_SCRATCH/$SYSTEM/ac/$GREEN_VER/spectral.h5
+#   In files:  $BENCH_SCRATCH/$SYSTEM/mbpt/$GREEN_VER/out_gw.h5
+#   Out:       $BENCH_SCRATCH/$SYSTEM/ac/$GREEN_VER/ac_gw.h5
 #              + results JSON via tools/extract_results.py
 
 #SBATCH --job-name=bench-ac
@@ -16,21 +18,38 @@ set -euo pipefail
 source "$BENCH_ROOT/env.sh"
 source "$BENCH_ROOT/tools/activate_env.sh"
 
-MBPT_OUT="$BENCH_SCRATCH/$SYSTEM/mbpt/$GREEN_VER/out.h5"
+AC_INPUT="$BENCH_SCRATCH/$SYSTEM/mbpt/$GREEN_VER/out_gw.h5"
 WORK="$BENCH_SCRATCH/$SYSTEM/ac/$GREEN_VER"
+AC_OUTPUT="$WORK/ac_gw.h5"
 mkdir -p "$WORK"
 cd "$WORK"
 
 export OMP_NUM_THREADS=${SLURM_CPUS_PER_TASK:-1}
 export MKL_NUM_THREADS=${SLURM_CPUS_PER_TASK:-1}
 
-# TODO confirm exact AC entry-point. Nevanlinna is the default for
-# green-mbtools (no external C++ deps beyond the in-tree extension).
-# AC runs under MPI (ntasks-per-node>1) with OMP threading per rank.
-srun python -m green_mbtools.ac \
-    --input  "$MBPT_OUT" \
-    --output "$WORK/spectral.h5" \
-    --method nevanlinna
+# grid + beta are the same values mbpt ran with (from the manifest).
+_yaml="import yaml; m=yaml.safe_load(open('$MANIFEST'));"
+GRID_FILE=$(python -c "$_yaml print(m.get('mesh',{}).get('grid_file','ir/1e4.h5'))")
+BETA=$(python -c "$_yaml print(m.get('mesh',{}).get('beta',100))")
+
+# The 'iter' dataset records the final iteration; its G_tau lives under
+# iter<N>/G_tau. (AC can run on any method's output; GW for now.)
+LAST_ITER=$(python -c "
+import h5py
+with h5py.File('$AC_INPUT', 'r') as f:
+    print(int(f['iter'][()]))
+")
+
+srun ac.exe \
+    --grid_file   "$GRID_FILE" \
+    --BETA        "$BETA" \
+    --input_file  "$AC_INPUT" \
+    --output_file "$AC_OUTPUT" \
+    --group       "iter${LAST_ITER}/G_tau" \
+    --e_min       -1 \
+    --e_max       0.5 \
+    --n_omega     1501 \
+    --eta         0.005
 
 # Persist results JSON keyed by detected (mbpt-ver, mbtools-ver).
 python "$BENCH_ROOT/tools/extract_results.py" \
