@@ -11,9 +11,9 @@ _lib.write_result so the schema stays consistent across systems.
 
 NOTE: energies come from each method's out_*.h5 (converged iter); timings
 are averaged from the mbpt SLURM log; spectral observables (IP / homo /
-lumo; band gap / vbm / cbm) come from the green-ac output. Version
-detection (_detect_versions) still needs work — until then results land in
-<unknown>_<unknown>.json.
+lumo; band gap / vbm / cbm) come from the green-ac output. Versions: mbpt
+from the $GREEN_ROOT install dir (no semver in the binary), mbtools from
+its version.py / installed distribution metadata.
 """
 from __future__ import annotations
 
@@ -27,28 +27,37 @@ from pathlib import Path
 from _lib import load_manifest, write_result
 
 
-def _detect_versions(green_root: str | None) -> tuple[str, str]:
-    """Resolve installed (mbpt, mbtools) version strings.
+def _mbpt_version() -> str:
+    """green-mbpt is a C++ binary with no Python module, and `mbpt.exe
+    --help` prints only git hashes (no semver). Take the release from the
+    versioned install dir, e.g. .../mbpt-cpu-install-v0.3.2 -> 0.3.2. Fall
+    back to $GREEN_VER, then 'unknown'."""
+    name = Path(os.environ.get("GREEN_ROOT", "")).name
+    m = re.search(r"v(\d[\w.]*)$", name)
+    if m:
+        return m.group(1)
+    return os.environ.get("GREEN_VER") or "unknown"
 
-    Reads from the loaded python packages first (truth), falls back to
-    inspecting $GREEN_VER for a CI environment that has no python deps.
-    """
-    mbpt_ver = mbtools_ver = "unknown"
+
+def _mbtools_version() -> str:
+    """green-mbtools version: new releases expose green_mbtools.version
+    .__version__; 0.3.x has no version.py, so fall back to the installed
+    distribution metadata."""
     try:
-        import green_mbpt  # type: ignore
-        mbpt_ver = getattr(green_mbpt, "__version__", "unknown")
-    except ImportError:
+        from green_mbtools.version import __version__
+        return __version__
+    except Exception:
         pass
     try:
-        import green_mbtools  # type: ignore
-        mbtools_ver = getattr(green_mbtools, "__version__", "unknown")
-    except ImportError:
-        try:
-            import mbtools  # 0.3.x layout
-            mbtools_ver = getattr(mbtools, "__version__", "unknown")
-        except ImportError:
-            pass
-    return mbpt_ver, mbtools_ver
+        from importlib.metadata import version
+        return version("green-mbtools")
+    except Exception:
+        return "unknown"
+
+
+def _detect_versions() -> tuple[str, str]:
+    """(mbpt, mbtools) version strings used for the results filename."""
+    return _mbpt_version(), _mbtools_version()
 
 
 def _green_ver() -> str:
@@ -270,7 +279,7 @@ def main() -> int:
     args = ap.parse_args()
 
     manifest = load_manifest(args.manifest)
-    mbpt_ver, mbtools_ver = _detect_versions(None)
+    mbpt_ver, mbtools_ver = _detect_versions()
 
     observables = _extract_observables(args.work_dir, manifest)
     timings = _extract_timings(args.work_dir)
