@@ -11,7 +11,8 @@ _lib.write_result (schema 2: one block per method under "methods", each
 {name, timings, observables}).
 
 NOTE: energies come from each method's out_*.h5 (converged iter); timings
-are averaged from the mbpt SLURM log; spectral observables (IP / homo /
+are the first-iteration value from the mbpt SLURM log (later iters
+accumulate in 0.3.2/1.0.0a0); spectral observables (IP / homo /
 lumo; band gap / vbm / cbm) come from the green-ac output. Versions: mbpt
 from the $GREEN_ROOT install dir (no semver in the binary), mbtools from
 its version.py / installed distribution metadata.
@@ -216,9 +217,12 @@ def _method_result(name: str, work_dir: Path, kind: str,
                    sections: dict[str, str]) -> dict:
     """Build one method's {name, timings, observables} block.
 
-    timings (avg per iteration, from the mbpt log section): 'hf' = the
-    Hartree-Fock build, 'total' = the method's solver (GF2/GW). Each line
-    reports per-rank max/min/avg — we take avg, then average over iterations.
+    timings (from the mbpt log section): 'hf' = the Hartree-Fock build,
+    'total' = the method's solver (GF2/GW). Each line reports per-rank
+    max/min/avg; we take avg of the FIRST iteration only. GW prints these
+    per iteration, but 0.3.2/1.0.0a0 accumulate the wallclock across
+    iterations, so only iter 1 is reliable (and first-iter stays correct
+    for future versions that fix the accumulation).
     observables: energies from the converged iter of out_<name>.h5 (e1b/ehf/
     ecorr = Energy_1b/HF/2b); GW additionally carries the spectral
     observables (the analytic continuation continues the GW Green's fn).
@@ -227,12 +231,12 @@ def _method_result(name: str, work_dir: Path, kind: str,
 
     hf_t = _event_avg_all(sections.get(name, ""), "Hartree-Fock")
     if hf_t:
-        block["timings"]["hf"] = sum(hf_t) / len(hf_t)
+        block["timings"]["hf"] = hf_t[0]          # first iteration only
     ev = _SOLVER_EVENT.get(name)
     if ev:
         tot = _event_avg_all(sections.get(name, ""), ev)
         if tot:
-            block["timings"]["total"] = sum(tot) / len(tot)
+            block["timings"]["total"] = tot[0]    # first iteration only
 
     energies = _h5_energies(_mbpt_out(work_dir, name))
     if energies:

@@ -68,7 +68,7 @@ def render() -> str:
         # timings table — separate so it can't be confused with regressions
         tim_keys = sorted({k for rel in releases for k in flat[rel][1]})
         if tim_keys:
-            lines.append("**Timings (avg s/iter)**")
+            lines.append("**Timings (s, first iter)**")
             lines.append("")
             header = ["timing"] + releases
             lines.append("| " + " | ".join(header) + " |")
