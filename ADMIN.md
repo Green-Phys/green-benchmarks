@@ -193,7 +193,12 @@ existing four do not.
     only git hashes, not a release. **Keep the version in that path**; if
     it's absent the filename falls back to `$GREEN_VER`, then `unknown`.
     mbtools comes from its installed package version.
-- All JSON keys for observables match the manifest's `observables[].id`.
-- Timing keys go under `timings:` in the JSON, separate from physical
-  observables. They are tracked but never gate a release.
+- Results JSON is **schema 2**: a `methods` map, each entry
+  `{name, timings, observables}`. Observables (energies per method;
+  spectral observables under `gw`) and timings are produced by
+  `extract_results.py` from the run outputs — they are *not* declared in
+  the manifest (the manifest is the input contract only).
+- Timings live under each method's `timings:` (separate from
+  `observables:`) so timing churn can't be mistaken for a physical
+  regression. They are tracked but never gate a release.
 - Never edit `RESULTS.md` by hand. It is regenerated.

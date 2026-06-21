@@ -38,13 +38,3 @@ methods:
   # All-electron Ge: GF2 is omitted by request (cost vs. value).
   - { type: hf, itermax: 1 }
   - { type: gw, itermax: 5, threshold: 1.0e-9 }
-
-observables:
-  - { id: total_energy,    units: Ha, since: 0.3.0 }
-  - { id: hf_energy,       units: Ha, since: 0.3.0 }
-  - { id: one_body_energy, units: Ha, since: 0.3.0 }
-  - { id: gw_corr,         units: Ha, since: 0.3.0 }
-  - { id: indirect_gap,    units: eV, since: 0.3.0 }
-  - { id: direct_gap_gamma,units: eV, since: 0.3.0 }
-  - { id: vbm,             units: eV, since: 0.3.0 }
-  - { id: cbm,             units: eV, since: 0.3.0 }

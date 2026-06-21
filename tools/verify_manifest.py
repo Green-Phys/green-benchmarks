@@ -12,7 +12,7 @@ from typing import Any
 from _lib import load_manifest
 
 
-REQUIRED_TOP = ["system", "basis", "mesh", "methods", "observables"]
+REQUIRED_TOP = ["system", "basis", "mesh", "methods"]
 ALLOWED_KIND = {"molecular", "solid"}
 ALLOWED_REL  = {"none", "sfx2c1e", "x2c1e"}
 ALLOWED_METHOD = {"hf", "gf2", "gw"}
@@ -60,14 +60,6 @@ def verify(path: str, manifest: dict[str, Any]) -> list[str]:
         if t == "gw":
             _check(isinstance(m.get("threshold"), float) and m["threshold"] > 0,
                    "methods[gw].threshold must be a positive float", errs)
-
-    seen_ids: set[str] = set()
-    for obs in manifest["observables"]:
-        _check("id" in obs, f"observable missing id: {obs}", errs)
-        _check("units" in obs, f"observable {obs.get('id')} missing units", errs)
-        if obs.get("id") in seen_ids:
-            errs.append(f"duplicate observable id: {obs['id']}")
-        seen_ids.add(obs.get("id"))
 
     return errs
 

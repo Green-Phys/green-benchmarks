@@ -42,14 +42,3 @@ methods:
   # x2c1e system+method combination must light up the spinor codepath.
   - { type: hf, itermax: 1 }
   - { type: gw, itermax: 5, threshold: 1.0e-9, orth_spinor: true }
-
-observables:
-  - { id: total_energy,    units: Ha, since: 0.3.0 }
-  - { id: hf_energy,       units: Ha, since: 0.3.0 }
-  - { id: one_body_energy, units: Ha, since: 0.3.0 }
-  - { id: gw_corr,         units: Ha, since: 0.3.0 }
-  - { id: indirect_gap,    units: eV, since: 0.3.0 }
-  - { id: direct_gap_gamma,units: eV, since: 0.3.0 }
-  - { id: soc_splitting_vbm, units: eV, since: 0.3.0 }   # spinor signature
-  - { id: vbm,             units: eV, since: 0.3.0 }
-  - { id: cbm,             units: eV, since: 0.3.0 }

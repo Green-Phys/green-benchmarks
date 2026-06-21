@@ -13,7 +13,7 @@ import argparse
 import json
 import sys
 
-from _lib import iter_systems, load_manifest
+from _lib import flatten_result, iter_systems, load_manifest
 
 
 def _read(system_dir, tag: str):
@@ -46,11 +46,13 @@ def main() -> int:
             continue
 
         print(f"\n## {manifest['system']['name']}")
-        for obs in manifest["observables"]:
-            ov = old["observables"].get(obs["id"])
-            nv = new["observables"].get(obs["id"])
+        o_obs, _ = flatten_result(old)
+        n_obs, _ = flatten_result(new)
+        for key in sorted(set(o_obs) | set(n_obs)):
+            ov = o_obs.get(key)
+            nv = n_obs.get(key)
             if ov is None or nv is None:
-                print(f"  {obs['id']}: "
+                print(f"  {key}: "
                       f"{'—' if ov is None else ov} -> "
                       f"{'—' if nv is None else nv}")
                 continue
@@ -59,7 +61,7 @@ def main() -> int:
             rel = abs(delta) / denom
             flag = " *FLAG*" if (abs(delta) > args.atol and rel > args.rtol) else ""
             any_flagged = any_flagged or bool(flag)
-            print(f"  {obs['id']}: {ov:.6g} -> {nv:.6g}  "
+            print(f"  {key}: {ov:.6g} -> {nv:.6g}  "
                   f"Δ={delta:+.3e} ({rel:.2%}){flag}")
 
     return 1 if any_flagged else 0
