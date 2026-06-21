@@ -24,7 +24,8 @@ system:
 
 basis:
   name: x2c-svpall
-  auxbasis: x2c-svpall-jkfit
+  auxbasis: none
+  beta: 3.0
 
 init:
   xc: pbe     # DFT-PBE mean-field starting point
