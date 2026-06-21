@@ -7,7 +7,8 @@ Called at the end of templates/ac.sbatch. Reads:
     mbpt out_*.h5, the ac ac_*.h5, and logs)
 
 Writes systems/<sys>/results/<mbpt-ver>_<mbtools-ver>.json via
-_lib.write_result so the schema stays consistent across systems.
+_lib.write_result (schema 2: one block per method under "methods", each
+{name, timings, observables}).
 
 NOTE: energies come from each method's out_*.h5 (converged iter); timings
 are averaged from the mbpt SLURM log; spectral observables (IP / homo /
@@ -145,7 +146,7 @@ def _peaks_from_A(A, freq):
 def _ac_spectral_peaks(ac_h5: Path):
     """Read the green-ac output's single iter<N>/G_tau group and return
     (occ, unocc) peak dicts (see _peaks_from_A). G and the frequency mesh
-    are atomic-unit complex arrays (h5pp real-pair layout, hence .view);
+    are atomic-unit complex arrays;
     A = -Im(G)/pi, everything converted to eV. None if file missing."""
     if not ac_h5.exists():
         return None
@@ -153,10 +154,9 @@ def _ac_spectral_peaks(ac_h5: Path):
     import numpy as np
     with h5py.File(ac_h5, "r") as f:
         grp = next(k for k in f if k.startswith("iter"))  # only one iter group
-        raw = f[f"{grp}/G_tau/data"][()].view(complex)
-        G = raw.reshape(raw.shape[:-1])                    # (n_omega,ns,nk,nao)
-        mesh = f[f"{grp}/G_tau/mesh"][()].view(complex)
-    freq = mesh.real.reshape(-1) * _AU2EV                  # drop tiny imag part
+        G = f[f"{grp}/G_tau/data"][()]  # (n_omega,ns,nk,nao)
+        mesh = f[f"{grp}/G_tau/mesh"][()]
+    freq = mesh.real.reshape(-1) * _AU2EV  # drop tiny imag part
     A = -np.imag(G / _AU2EV) / np.pi
     return _peaks_from_A(A, freq)
 
@@ -176,99 +176,73 @@ def _method_sections(text: str) -> dict[str, str]:
     return sections
 
 
-def _extract_observables(work_dir: Path, manifest: dict) -> dict[str, float]:
-    """Observables for the cross-version table, keyed by manifest
-    observables[].id.
+# Solver "total" timing event per method (HF has only the HF build).
+_SOLVER_EVENT = {"gf2": "GF2 total", "gw": "total"}
 
-    Energies come from the converged iteration of each method's out_*.h5
-    (Energy_1b/2b/HF). The headline spectral observable comes from the
-    green-ac output (_ac_output) and differs by system kind: molecular ->
-    ionization potential; solid -> band gap — those are left as TODOs.
-    """
-    observed: dict[str, float] = {}
-    ids = {o["id"] for o in manifest["observables"]}
 
-    # --- Energies from the mbpt h5 (converged iter). Energy_2b is the
-    # correlation energy; total = Energy_HF + Energy_2b. ---
-    energies = {m: _h5_energies(_mbpt_out(work_dir, m))
-                for m in ("hf", "gf2", "gw")}
-    if "hf_energy" in ids and energies["hf"]:
-        observed["hf_energy"] = energies["hf"][2]          # Energy_HF
-    if "gf2_corr" in ids and energies["gf2"]:
-        observed["gf2_corr"] = energies["gf2"][1]          # Energy_2b
-    if "gw_corr" in ids and energies["gw"]:
-        observed["gw_corr"] = energies["gw"][1]            # Energy_2b
-    if "total_energy" in ids:
-        # total of the most correlated method that ran: HF + correlation
-        for m in ("gw", "gf2", "hf"):
-            if energies[m]:
-                observed["total_energy"] = energies[m][2] + energies[m][1]
-                break
-    if "one_body_energy" in ids:
-        # one-body (Energy_1b) of the most correlated method that ran
-        for m in ("gw", "gf2", "hf"):
-            if energies[m]:
-                observed["one_body_energy"] = energies[m][0]
-                break
-
-    # --- Spectral observables from the green-ac output ---
-    # homo/vbm = largest occupied peak; lumo/cbm = smallest unoccupied peak.
+def _spectral_observables(work_dir: Path, kind: str) -> dict[str, float]:
+    """IP/homo/lumo (molecular) or band gap/vbm/cbm/direct_gap_gamma (solid)
+    from the green-ac output. Empty if the AC output is unavailable.
+    homo/vbm = largest occupied peak; lumo/cbm = smallest unoccupied peak."""
+    out: dict[str, float] = {}
     peaks = _ac_spectral_peaks(_ac_output(work_dir))
-    kind = manifest["system"]["kind"]
-    if peaks is not None:
-        occ, unocc = peaks
-        homo = max(occ.values()) if occ else None
-        lumo = min(unocc.values()) if unocc else None
-        if kind == "molecular":
-            if homo is not None and "homo" in ids:
-                observed["homo"] = homo
-            if lumo is not None and "lumo" in ids:
-                observed["lumo"] = lumo
-            if homo is not None and "ip_koopmans" in ids:
-                observed["ip_koopmans"] = -homo
-        elif kind == "solid":
-            if homo is not None and "vbm" in ids:
-                observed["vbm"] = homo
-            if lumo is not None and "cbm" in ids:
-                observed["cbm"] = lumo
-            if homo is not None and lumo is not None and "indirect_gap" in ids:
-                observed["indirect_gap"] = lumo - homo
-            # Direct gap at Gamma — ASSUMES k-index 0 is Gamma (confirm!).
-            if "direct_gap_gamma" in ids:
-                g_occ = [v for (s, k, a), v in occ.items() if k == 0]
-                g_unocc = [v for (s, k, a), v in unocc.items() if k == 0]
-                if g_occ and g_unocc:
-                    observed["direct_gap_gamma"] = min(g_unocc) - max(g_occ)
-
-    return observed
+    if peaks is None:
+        return out
+    occ, unocc = peaks
+    homo = max(occ.values()) if occ else None
+    lumo = min(unocc.values()) if unocc else None
+    if kind == "molecular":
+        if homo is not None:
+            out["homo"] = homo
+            out["ip_koopmans"] = -homo
+        if lumo is not None:
+            out["lumo"] = lumo
+    elif kind == "solid":
+        if homo is not None:
+            out["vbm"] = homo
+        if lumo is not None:
+            out["cbm"] = lumo
+        if homo is not None and lumo is not None:
+            out["indirect_gap"] = lumo - homo
+        # Direct gap at Gamma — ASSUMES k-index 0 is Gamma (confirm!).
+        g_occ = [v for (s, k, a), v in occ.items() if k == 0]
+        g_unocc = [v for (s, k, a), v in unocc.items() if k == 0]
+        if g_occ and g_unocc:
+            out["direct_gap_gamma"] = min(g_unocc) - max(g_occ)
+    return out
 
 
-def _extract_timings(work_dir: Path) -> dict[str, float]:
-    """Average per-iteration wallclock per method, grep'd from the mbpt
-    SLURM output file.
+def _method_result(name: str, work_dir: Path, kind: str,
+                   sections: dict[str, str]) -> dict:
+    """Build one method's {name, timings, observables} block.
 
-    Each timed event line reports per-rank max/min/avg; we take avg, then
-    average that over iterations (events are printed once per iteration).
-    Averaging over iterations is robust to versions converging in a
-    different number of steps — it isolates per-iteration compute cost.
-    The timed event differs by method:
-      hf   <- Event 'Hartree-Fock'  in the HF run
-      gf2  <- Event 'GF2 total'     in the GF2 run
-      gw   <- Event 'total'         in the GW run
+    timings (avg per iteration, from the mbpt log section): 'hf' = the
+    Hartree-Fock build, 'total' = the method's solver (GF2/GW). Each line
+    reports per-rank max/min/avg — we take avg, then average over iterations.
+    observables: energies from the converged iter of out_<name>.h5 (e1b/ehf/
+    ecorr = Energy_1b/HF/2b); GW additionally carries the spectral
+    observables (the analytic continuation continues the GW Green's fn).
     """
-    timings: dict[str, float] = {}
-    log = _mbpt_log(work_dir)
-    if log is None:
-        return timings
-    sections = _method_sections(log.read_text(errors="replace"))
+    block: dict = {"name": name, "timings": {}, "observables": {}}
 
-    for key, event in (("hf", "Hartree-Fock"), ("gf2", "GF2 total"),
-                       ("gw", "total")):
-        per_iter = _event_avg_all(sections.get(key, ""), event)
-        if per_iter:
-            timings[key] = sum(per_iter) / len(per_iter)
+    hf_t = _event_avg_all(sections.get(name, ""), "Hartree-Fock")
+    if hf_t:
+        block["timings"]["hf"] = sum(hf_t) / len(hf_t)
+    ev = _SOLVER_EVENT.get(name)
+    if ev:
+        tot = _event_avg_all(sections.get(name, ""), ev)
+        if tot:
+            block["timings"]["total"] = sum(tot) / len(tot)
 
-    return timings
+    energies = _h5_energies(_mbpt_out(work_dir, name))
+    if energies:
+        e1b, e2b, ehf = energies
+        block["observables"].update(e1b=e1b, ehf=ehf, ecorr=e2b)
+
+    if name == "gw":
+        block["observables"].update(_spectral_observables(work_dir, kind))
+
+    return block
 
 
 def main() -> int:
@@ -279,17 +253,22 @@ def main() -> int:
     args = ap.parse_args()
 
     manifest = load_manifest(args.manifest)
+    kind = manifest["system"]["kind"]
     mbpt_ver, mbtools_ver = _detect_versions()
 
-    observables = _extract_observables(args.work_dir, manifest)
-    timings = _extract_timings(args.work_dir)
+    log = _mbpt_log(args.work_dir)
+    sections = _method_sections(log.read_text(errors="replace")) if log else {}
+
+    methods = {
+        m: _method_result(m, args.work_dir, kind, sections)
+        for m in (x["type"].lower() for x in manifest["methods"])
+    }
 
     out_path = write_result(
         system_name=args.system,
         mbpt_ver=mbpt_ver,
         mbtools_ver=mbtools_ver,
-        observables=observables,
-        timings=timings,
+        methods=methods,
         extras={"extracted_at": time.strftime("%Y-%m-%dT%H:%M:%S%z")},
     )
     print(f"wrote {out_path}")

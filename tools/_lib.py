@@ -42,26 +42,37 @@ def result_filename(mbpt_ver: str, mbtools_ver: str) -> str:
     return f"{mbpt_ver}_{mbtools_ver}.json"
 
 
+# Units for the per-method observable keys (used by the report tools).
+OBSERVABLE_UNITS = {
+    "e1b": "Ha", "ehf": "Ha", "ecorr": "Ha", "etot": "Ha",
+    "ip_koopmans": "eV", "homo": "eV", "lumo": "eV",
+    "indirect_gap": "eV", "direct_gap_gamma": "eV", "vbm": "eV", "cbm": "eV",
+}
+
+
+def observable_units(key: str) -> str:
+    """Units for an observable key (the bare key, not 'method/key')."""
+    return OBSERVABLE_UNITS.get(key, "")
+
+
 def write_result(
     system_name: str,
     mbpt_ver: str,
     mbtools_ver: str,
-    observables: dict[str, float],
-    timings: dict[str, float] | None = None,
+    methods: dict[str, dict[str, Any]],
     extras: dict[str, Any] | None = None,
 ) -> pathlib.Path:
     """Persist a results JSON, atomically.
 
-    Observables and timings are kept in separate keys so timing churn
-    cannot be mistaken for a physical regression in the cross-version
-    table.
+    Schema 2: results are organized per method under "methods", each a dict
+    {name, timings, observables}. Timings stay separate from observables so
+    timing churn can't be mistaken for a physical regression.
     """
     payload = {
-        "schema": 1,
+        "schema": 2,
         "mbpt_version": mbpt_ver,
         "mbtools_version": mbtools_ver,
-        "observables": observables,
-        "timings": timings or {},
+        "methods": methods,
     }
     if extras:
         payload["extras"] = extras
@@ -73,6 +84,19 @@ def write_result(
         fh.write("\n")
     tmp.replace(out)
     return out
+
+
+def flatten_result(result: dict) -> tuple[dict[str, float], dict[str, float]]:
+    """Flatten a schema-2 result into ('method/key' -> value) observable and
+    timing dicts, for cross-version tabulation."""
+    obs: dict[str, float] = {}
+    timings: dict[str, float] = {}
+    for mname, mblock in result.get("methods", {}).items():
+        for k, v in mblock.get("observables", {}).items():
+            obs[f"{mname}/{k}"] = v
+        for k, v in mblock.get("timings", {}).items():
+            timings[f"{mname}/{k}"] = v
+    return obs, timings
 
 
 def iter_systems() -> list[pathlib.Path]:

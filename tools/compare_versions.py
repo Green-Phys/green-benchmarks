@@ -20,7 +20,8 @@ import json
 import statistics
 from pathlib import Path
 
-from _lib import iter_systems, load_manifest
+from _lib import (flatten_result, iter_systems, load_manifest,
+                  observable_units)
 
 
 def _read(system_dir: Path, tag: str):
@@ -68,38 +69,41 @@ def main() -> None:
             out.append("")
             continue
 
+        o_obs, o_tim = flatten_result(old)
+        n_obs, n_tim = flatten_result(new)
+
         out.append(f"## {sys_name}")
         out.append("")
         out.append(f"| observable | {args.old} | {args.new} | Δ% |")
         out.append("|---|---|---|---|")
-        for obs in manifest["observables"]:
-            ov = old["observables"].get(obs["id"])
-            nv = new["observables"].get(obs["id"])
+        for key in sorted(set(o_obs) | set(n_obs)):
+            units = observable_units(key.split("/")[-1])
+            ov = o_obs.get(key)
+            nv = n_obs.get(key)
             if ov is None and nv is None:
                 continue
             if ov is None:
-                obs_missing.append((sys_name, obs["id"], args.old))
-                out.append(f"| `{obs['id']}` | — | {nv:.6g} {obs['units']} | new |")
+                obs_missing.append((sys_name, key, args.old))
+                out.append(f"| `{key}` | — | {nv:.6g} {units} | new |")
                 continue
             if nv is None:
-                obs_missing.append((sys_name, obs["id"], args.new))
-                out.append(f"| `{obs['id']}` | {ov:.6g} {obs['units']} | — | dropped |")
+                obs_missing.append((sys_name, key, args.new))
+                out.append(f"| `{key}` | {ov:.6g} {units} | — | dropped |")
                 continue
             pct = _percent(ov, nv)
-            out.append(f"| `{obs['id']}` | {ov:.6g} {obs['units']} "
-                       f"| {nv:.6g} {obs['units']} | {pct:+.3f}% |")
+            out.append(f"| `{key}` | {ov:.6g} {units} "
+                       f"| {nv:.6g} {units} | {pct:+.3f}% |")
             if abs(pct) > args.obs_tol_percent:
-                obs_changes.append((sys_name, obs["id"], ov, nv, pct))
+                obs_changes.append((sys_name, key, ov, nv, pct))
         out.append("")
 
-        timing_keys = set(old.get("timings", {}).keys()) \
-                    | set(new.get("timings", {}).keys())
+        timing_keys = set(o_tim) | set(n_tim)
         if timing_keys:
             out.append(f"| timing (s) | {args.old} | {args.new} | Δ% |")
             out.append("|---|---|---|---|")
             for tk in sorted(timing_keys):
-                ov = old.get("timings", {}).get(tk)
-                nv = new.get("timings", {}).get(tk)
+                ov = o_tim.get(tk)
+                nv = n_tim.get(tk)
                 if ov is None or nv is None:
                     out.append(f"| `{tk}` | "
                                f"{'—' if ov is None else f'{ov:.3g}'} | "

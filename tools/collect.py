@@ -8,10 +8,10 @@ from __future__ import annotations
 
 import json
 import sys
-from collections import defaultdict
 from pathlib import Path
 
-from _lib import REPO_ROOT, iter_systems, load_manifest
+from _lib import (REPO_ROOT, flatten_result, iter_systems, load_manifest,
+                  observable_units)
 
 
 def _load_results(system_dir: Path) -> dict[str, dict]:
@@ -48,33 +48,35 @@ def render() -> str:
             lines.append("")
             continue
 
-        # observables table
-        header = ["observable"] + releases
-        lines.append("| " + " | ".join(header) + " |")
-        lines.append("|" + "|".join(["---"] * len(header)) + "|")
-        for obs in manifest["observables"]:
-            row = [f"`{obs['id']}`"]
-            for rel in releases:
-                v = results[rel].get("observables", {}).get(obs["id"])
-                row.append(_fmt(v, obs["units"]))
-            lines.append("| " + " | ".join(row) + " |")
-        lines.append("")
+        # flatten each release's schema-2 result into method/key dicts
+        flat = {rel: flatten_result(results[rel]) for rel in releases}
 
-        # timings table — printed separately so it cannot be confused
-        # with physical regressions
-        timing_keys: set[str] = set()
-        for rel in releases:
-            timing_keys.update(results[rel].get("timings", {}).keys())
-        if timing_keys:
-            lines.append("**Timings**")
-            lines.append("")
-            header = ["timing (s)"] + releases
+        # observables table (rows: method/observable)
+        obs_keys = sorted({k for rel in releases for k in flat[rel][0]})
+        if obs_keys:
+            header = ["observable"] + releases
             lines.append("| " + " | ".join(header) + " |")
             lines.append("|" + "|".join(["---"] * len(header)) + "|")
-            for tk in sorted(timing_keys):
-                row = [f"`{tk}`"]
+            for key in obs_keys:
+                units = observable_units(key.split("/")[-1])
+                row = [f"`{key}`"]
                 for rel in releases:
-                    v = results[rel].get("timings", {}).get(tk)
+                    row.append(_fmt(flat[rel][0].get(key), units))
+                lines.append("| " + " | ".join(row) + " |")
+            lines.append("")
+
+        # timings table — separate so it can't be confused with regressions
+        tim_keys = sorted({k for rel in releases for k in flat[rel][1]})
+        if tim_keys:
+            lines.append("**Timings (avg s/iter)**")
+            lines.append("")
+            header = ["timing"] + releases
+            lines.append("| " + " | ".join(header) + " |")
+            lines.append("|" + "|".join(["---"] * len(header)) + "|")
+            for key in tim_keys:
+                row = [f"`{key}`"]
+                for rel in releases:
+                    v = flat[rel][1].get(key)
                     row.append("—" if v is None else f"{v:.3g}")
                 lines.append("| " + " | ".join(row) + " |")
             lines.append("")
