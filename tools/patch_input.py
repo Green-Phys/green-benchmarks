@@ -53,12 +53,20 @@ def main() -> int:
         if fb.shape != fs.shape:
             sys.exit(f"HF/Fock-k shape mismatch (full k-mesh must match): "
                      f"base {fb.shape} vs hf-from {fs.shape}")
-        mb, ms = b["symmetry/k/mesh"][()], s["symmetry/k/mesh"][()]
-        same = mb.shape == ms.shape and np.allclose(mb, ms)
-        print(f"full k-mesh identical : {same}  (nk={fb.shape[1]})")
-        if not same:
-            sys.exit("symmetry/k/mesh differs between files — full k-mesh "
-                     "must be identical to transplant HF/* by index.")
+        # Best-effort full-mesh check: if the mesh dataset is where we
+        # expect in both files, verify it's identical (same k-points +
+        # ordering). If absent (the layout differs across versions), fall
+        # back to the matched Fock-k shape + the known-identical ordering.
+        mkey = "symmetry/k/mesh"
+        if mkey in b and mkey in s:
+            mb, ms = b[mkey][()], s[mkey][()]
+            if not (mb.shape == ms.shape and np.allclose(mb, ms)):
+                sys.exit(f"{mkey} differs between files — full k-mesh must "
+                         "be identical to transplant HF/* by index.")
+            print(f"full k-mesh identical : True  (nk={fb.shape[1]})")
+        else:
+            print(f"full k-mesh check skipped ('{mkey}' absent); relying on "
+                  f"matched Fock-k shape (nk={fb.shape[1]})")
         print(f"max|Fock(hf-from) - Fock(base)| = {np.max(np.abs(fs - fb)):.3e}")
 
     # --- copy base, then overwrite only the transplanted HF datasets ---
