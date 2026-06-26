@@ -59,7 +59,10 @@ def _mbtools_version() -> str:
 
 def _detect_versions() -> tuple[str, str]:
     """(mbpt, mbtools) version strings used for the results filename."""
-    return _mbpt_version(), _mbtools_version()
+    mbpt = _mbpt_version()
+    if os.environ.get("GREEN_VER", "").endswith("_patched"):
+        mbpt += "-patched"   # distinct tag so it doesn't collide with base
+    return mbpt, _mbtools_version()
 
 
 def _green_ver() -> str:

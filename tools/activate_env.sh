@@ -5,7 +5,7 @@
 # Sourced (not exec'd) from every templates/*.sbatch *after* env.sh.
 #
 # Requires set:
-#   GREEN_VER                 v032 | v100a0
+#   GREEN_VER                 v032 | v100a0 | v032_patched
 #   GREEN_ROOT_V032           install prefix for green-mbpt 0.3.2
 #   GREEN_ROOT_V100A0         install prefix for green-mbpt 1.0.0a0
 #   MBTOOLS_V032_CONDA_ENV    e.g. mbtools-v0.3.0
@@ -23,8 +23,14 @@ case "${GREEN_VER:-}" in
     GREEN_ROOT="$GREEN_ROOT_V100A0"
     CONDA_ENV="$MBTOOLS_V100A0_CONDA_ENV"
     ;;
+  v032_patched)
+    # patched diagnostic run: v032 solver/env + v032 grid, with v100a0's
+    # (symmetric) Fock swapped into input.h5 by templates/init.sbatch.
+    GREEN_ROOT="$GREEN_ROOT_V032"
+    CONDA_ENV="$MBTOOLS_V032_CONDA_ENV"
+    ;;
   *)
-    echo "activate_env.sh: GREEN_VER must be v032 or v100a0, got '${GREEN_VER:-}'" >&2
+    echo "activate_env.sh: GREEN_VER must be v032, v100a0 or v032_patched, got '${GREEN_VER:-}'" >&2
     return 2 2>/dev/null || exit 2
     ;;
 esac

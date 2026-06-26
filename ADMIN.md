@@ -177,7 +177,13 @@ existing four do not.
   explicit intent if the new field is real.
 - **Cross-version diff shows huge regression**: do not paper over
   with tolerance bumps. File an issue on the source repo, link the
-  benchmark run, and wait for triage.
+  benchmark run, and wait for triage. To localize init (mean-field
+  Fock) vs solver as the cause, run the **patched diagnostic** after the
+  v032 and v100a0 runs:
+  `GREEN_VER=v032_patched bash systems/<sys>/submit.sh`. It reuses v032's
+  grid/integrals/solver but swaps in v100a0's HF Fock/S/H
+  (`tools/patch_input.py`); if the result (`0.3.2-patched_0.3.0.json`)
+  matches the v100a0 run, the init Fock was the cause, not the solver.
 - **HPC allocation lost**: out of scope for this repo. The suite stops
   running. This is the known bus factor.
 
