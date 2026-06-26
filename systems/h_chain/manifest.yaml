@@ -1,0 +1,36 @@
+# H chain — 1D hydrogen chain (STO-6G), minimal periodic-correlation
+# benchmark. One H per primitive cell; periodic along x with spacing
+# R = 0.7408481486 A (the default unit), and 20 A of vacuum in y and z to
+# isolate the chain. 50 k-points along the chain: mesh [50, 1, 1].
+
+system:
+  name: h_chain
+  kind: solid
+  geometry:
+    lattice:
+      a: 1.0          # A; the vectors below are the real lattice in A
+      vectors:
+        - [0.7408481486, 0.0, 0.0]   # chain axis, R
+        - [0.0, 20.0, 0.0]           # vacuum
+        - [0.0, 0.0, 20.0]           # vacuum
+    atoms:
+      - { element: H, frac: [0.0, 0.0, 0.0] }
+  pseudo: none
+  relativistic: none
+
+basis:
+  name: sto-6g
+  auxbasis: none
+
+init:
+  xc: pbe     # DFT-PBE mean-field starting point
+
+mesh:
+  k: [50, 1, 1]
+  beta: 1000
+  grid_file: ir/1e4.h5
+
+methods:
+  - { type: hf,  itermax: 1 }
+  - { type: gf2, itermax: 1 }
+  - { type: gw,  itermax: 30, threshold: 1.0e-7 }

@@ -89,14 +89,15 @@ def render(manifest: dict) -> list[str]:
         args += ["--a", _lattice_vectors(sys_["geometry"])]
         args += ["--atom", _atom_lines_solid(sys_["geometry"])]
         if "k" in mesh:
-            # --nk takes a single int (cubic NxNxN). The 3-value form is
-            # v100-only, so emit just the scalar for cross-version support.
+            # --nk: a single int for a cubic NxNxN mesh works on every
+            # version; a non-cubic mesh needs the 3-value form, which only
+            # green-mbpt >= 1.0 accepts (v0.3.2's --nk is scalar-only).
             k = mesh["k"]
             kk = k if isinstance(k, (list, tuple)) else [k]
-            if len(set(kk)) != 1:
-                sys.exit(f"render_init_args: non-cubic k-mesh {k} needs the "
-                         "3-value --nk (v100-only); not supported here.")
-            args += ["--nk", str(kk[0])]
+            if len(set(kk)) == 1:
+                args += ["--nk", str(kk[0])]
+            else:
+                args += ["--nk", *(str(x) for x in kk)]
     else:
         args += ["--atom", _atom_lines_molecular(sys_["geometry"])]
         if "spin" in sys_:
