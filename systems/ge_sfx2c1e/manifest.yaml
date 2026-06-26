@@ -31,9 +31,9 @@ init:
   xc: pbe     # DFT-PBE mean-field starting point
 
 mesh:
-  k: [4, 4, 4]
-  beta: 1000
-  grid_file: ir/1e4.h5
+  k: [3, 3, 3]
+  beta: 100
+  grid_file: ir/1e5.h5
 
 methods:
   # All-electron Ge: GF2 is omitted by request (cost vs. value).
