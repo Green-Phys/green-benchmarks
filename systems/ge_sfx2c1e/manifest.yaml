@@ -24,8 +24,7 @@ system:
 
 basis:
   name: x2c-svpall
-  auxbasis: none
-  beta: 3.0
+  auxbasis: def2-universal-jkfit   # JK-fit aux basis (all-electron: must be explicit)
 
 init:
   xc: pbe     # DFT-PBE mean-field starting point
@@ -33,9 +32,12 @@ init:
 mesh:
   k: [3, 3, 3]
   beta: 100
-  grid_file: ir/1e5.h5
+  grid_file: ir/1e6.h5   # matches the validated manual runs
 
 methods:
   # All-electron Ge: GF2 is omitted by request (cost vs. value).
-  - { type: hf, itermax: 1 }
-  - { type: gw, itermax: 5, threshold: 1.0e-9 }
+  # Cross-version reproducibility experiment: HF + GW both run 2 iterations
+  # (PBE seed, def2-universal-jkfit aux). Analytic continuation is skipped
+  # (SKIP_AC=1 in submit.sh) so only the energy observables are extracted.
+  - { type: hf, itermax: 2 }
+  - { type: gw, itermax: 2, threshold: 1.0e-9 }

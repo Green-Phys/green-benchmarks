@@ -26,8 +26,7 @@ system:
 
 basis:
   name: x2c-svpall
-  auxbasis: none
-  beta: 3.0
+  auxbasis: def2-universal-jkfit   # JK-fit aux basis (all-electron: must be explicit)
 
 init:
   xc: pbe     # DFT-PBE mean-field starting point
@@ -35,11 +34,14 @@ init:
 mesh:
   k: [3, 3, 3]
   beta: 100
-  grid_file: ir/1e5.h5
+  grid_file: ir/1e6.h5   # matches the validated manual runs
 
 methods:
   # All-electron Ge x2c1e: GF2 is omitted by request.
-  # orth_spinor on gw makes the spinor-branch intent explicit; the
-  # x2c1e system+method combination must light up the spinor codepath.
-  - { type: hf, itermax: 1 }
-  - { type: gw, itermax: 5, threshold: 1.0e-9, orth_spinor: true }
+  # The spinor codepath is exercised via `relativistic: x2c1e` (--x2c 2 at
+  # init); this pipeline has no GW CLI knob for it.
+  # Cross-version reproducibility experiment: HF + GW both run 2 iterations
+  # (PBE seed, def2-universal-jkfit aux). Analytic continuation is skipped
+  # (SKIP_AC=1 in submit.sh) so only the energy observables are extracted.
+  - { type: hf, itermax: 2 }
+  - { type: gw, itermax: 2, threshold: 1.0e-9 }

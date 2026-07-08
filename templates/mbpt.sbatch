@@ -23,6 +23,7 @@ cd "$WORK"
 
 export OMP_NUM_THREADS=${SLURM_CPUS_PER_TASK:-1}
 export MKL_NUM_THREADS=${SLURM_CPUS_PER_TASK:-1}
+export HDF5_USE_FILE_LOCKING=FALSE
 
 # Pull manifest values into separate vars (one python call per value
 # so whitespace inside a value can't poison the others).
@@ -50,11 +51,14 @@ for scf_type in $METHODS; do
     # which silently under-converges GW.
     ITERMAX=$(python -c "$_yaml print(next((x.get('itermax',1) for x in m['methods'] if x['type'].upper()=='$scf_type'),1))")
     # Binary lives at $GREEN_ROOT/bin/mbpt.exe (on PATH via activate_env.sh).
-    # Other params (mixing, diis, threshold, …) take mbpt.exe defaults.
+    # Full self-energy mixing (alpha=1.0 => take the full new sigma each
+    # iteration, no damping). Other params (diis, threshold, …) take defaults.
     srun mbpt.exe \
         --verbose          4 \
         --scf_type         "$scf_type" \
         --itermax          "$ITERMAX" \
+        --mixing_type      SIGMA_MIXING \
+        --mixing_alpha     1.0 \
         --input_file       "$INPUT" \
         --dfintegral_file  "$DF_INT" \
         --dfintegral_hf_file "$DF_HF_INT" \
@@ -63,3 +67,16 @@ for scf_type in $METHODS; do
         --results_file     "$OUT" \
         --restart          false
 done
+
+# When analytic continuation is skipped for this system (SKIP_AC=1, set in
+# the system's submit.sh), ac.sbatch — which normally calls
+# tools/extract_results.py — never runs. Do the energy-only extraction here
+# instead. Spectral observables (vbm/cbm/gaps) need the AC output and are
+# simply omitted; extract_results degrades gracefully when it's absent.
+if [[ "${SKIP_AC:-0}" == 1 ]]; then
+    echo "=== SKIP_AC=1: extracting energies (no analytic continuation) ==="
+    python "$BENCH_ROOT/tools/extract_results.py" \
+        --system   "$SYSTEM" \
+        --manifest "$MANIFEST" \
+        --work-dir "$BENCH_SCRATCH/$SYSTEM"
+fi
