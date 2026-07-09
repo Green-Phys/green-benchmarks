@@ -7,13 +7,13 @@ Called at the end of templates/ac.sbatch. Reads:
     mbpt out_*.h5, the ac ac_*.h5, and logs)
 
 Writes systems/<sys>/results/<mbpt-ver>_<mbtools-ver>.json via
-_lib.write_result (schema 2: one block per method under "methods", each
-{name, timings, observables}).
+_lib.write_result (schema 3: one block per method under "methods", each
+{name, energies, final_iter, timings, spectral?}).
 
-NOTE: energies come from each method's out_*.h5 (converged iter); timings
-are the first-iteration value from the mbpt SLURM log (later iters
-accumulate in 0.3.2/1.0.0a0); spectral observables (IP / homo /
-lumo; band gap / vbm / cbm) come from the green-ac output. Versions: mbpt
+NOTE: energies are per-iteration from each method's out_*.h5 (every iter,
+plus final_iter); timings are the first-iteration value from the mbpt SLURM
+log (later iters accumulate in 0.3.2/1.0.0a0); spectral observables (IP /
+homo / lumo; band gap / vbm / cbm) come from the green-ac output. Versions: mbpt
 from the $GREEN_ROOT install dir (no semver in the binary), mbtools from
 its version.py / installed distribution metadata.
 """
@@ -106,12 +106,14 @@ def _mbpt_out(work_dir: Path, method: str) -> Path:
     return work_dir / "mbpt" / _green_ver() / f"out_{method}.h5"
 
 
-def _h5_energies(path: Path) -> tuple[float, float, float] | None:
-    """(Energy_1b, Energy_2b, Energy_HF) from the converged iteration of an
-    mbpt out_*.h5 — groups iter<N>/Energy_{1b,2b,HF}, with N the 'iter'
-    dataset. Returns None if the file is missing/unreadable."""
+def _h5_iteration_energies(path: Path) -> tuple[list[dict], int | None]:
+    """Per-iteration energies and the final iteration index from an mbpt
+    out_*.h5. Walks every iter<N> group and returns
+    ([{iter, e1b, ehf, ecorr}, ...] sorted by N, final_iter), where
+    e1b/ehf/ecorr = Energy_1b/HF/2b and final_iter is the file's 'iter'
+    dataset. Returns ([], None) if the file is missing/unreadable."""
     if not path.exists():
-        return None
+        return [], None
     import h5py
     import numpy as np
 
@@ -119,11 +121,21 @@ def _h5_energies(path: Path) -> tuple[float, float, float] | None:
         v = np.asarray(grp[name][()]).ravel()[0]
         return float(v.real if np.iscomplexobj(v) else v)
 
+    energies: list[dict] = []
     with h5py.File(path, "r") as f:
-        grp = f[f"iter{int(f['iter'][()])}"]
-        return (_scalar(grp, "Energy_1b"),
-                _scalar(grp, "Energy_2b"),
-                _scalar(grp, "Energy_HF"))
+        final = (int(np.asarray(f["iter"][()]).ravel()[0])
+                 if "iter" in f else None)
+        iters = sorted(int(k[4:]) for k in f
+                       if k.startswith("iter") and k[4:].isdigit())
+        for n in iters:
+            grp = f[f"iter{n}"]
+            energies.append({
+                "iter": n,
+                "e1b": _scalar(grp, "Energy_1b"),
+                "ehf": _scalar(grp, "Energy_HF"),
+                "ecorr": _scalar(grp, "Energy_2b"),
+            })
+    return energies, final
 
 
 def _peaks_from_A(A, freq):
@@ -218,7 +230,8 @@ def _spectral_observables(work_dir: Path, kind: str) -> dict[str, float]:
 
 def _method_result(name: str, work_dir: Path, kind: str,
                    sections: dict[str, str]) -> dict:
-    """Build one method's {name, timings, observables} block.
+    """Build one method's {name, energies, final_iter, timings, spectral?}
+    block (schema 3).
 
     timings (from the mbpt log section): 'hf' = the Hartree-Fock build,
     'total' = the method's solver (GF2/GW). Each line reports per-rank
@@ -226,11 +239,11 @@ def _method_result(name: str, work_dir: Path, kind: str,
     per iteration, but 0.3.2/1.0.0a0 accumulate the wallclock across
     iterations, so only iter 1 is reliable (and first-iter stays correct
     for future versions that fix the accumulation).
-    observables: energies from the converged iter of out_<name>.h5 (e1b/ehf/
-    ecorr = Energy_1b/HF/2b); GW additionally carries the spectral
-    observables (the analytic continuation continues the GW Green's fn).
+    energies: every iteration of out_<name>.h5 as {iter, e1b, ehf, ecorr}
+    (Energy_1b/HF/2b), with final_iter the converged index. GW additionally
+    carries a 'spectral' block (vbm/cbm/gaps) from the analytic continuation.
     """
-    block: dict = {"name": name, "timings": {}, "observables": {}}
+    block: dict = {"name": name, "timings": {}}
 
     hf_t = _event_avg_all(sections.get(name, ""), "Hartree-Fock")
     if hf_t:
@@ -241,13 +254,15 @@ def _method_result(name: str, work_dir: Path, kind: str,
         if tot:
             block["timings"]["total"] = tot[0]    # first iteration only
 
-    energies = _h5_energies(_mbpt_out(work_dir, name))
-    if energies:
-        e1b, e2b, ehf = energies
-        block["observables"].update(e1b=e1b, ehf=ehf, ecorr=e2b)
+    energies, final_iter = _h5_iteration_energies(_mbpt_out(work_dir, name))
+    block["energies"] = energies
+    if final_iter is not None:
+        block["final_iter"] = final_iter
 
     if name == "gw":
-        block["observables"].update(_spectral_observables(work_dir, kind))
+        spectral = _spectral_observables(work_dir, kind)
+        if spectral:
+            block["spectral"] = spectral
 
     return block
 

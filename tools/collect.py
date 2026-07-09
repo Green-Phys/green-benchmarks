@@ -48,7 +48,7 @@ def render() -> str:
             lines.append("")
             continue
 
-        # flatten each release's schema-2 result into method/key dicts
+        # flatten each release's result (schema 2 or 3) into method/key dicts
         flat = {rel: flatten_result(results[rel]) for rel in releases}
 
         # observables table (rows: method/observable)

@@ -64,12 +64,17 @@ def write_result(
 ) -> pathlib.Path:
     """Persist a results JSON, atomically.
 
-    Schema 2: results are organized per method under "methods", each a dict
-    {name, timings, observables}. Timings stay separate from observables so
-    timing churn can't be mistaken for a physical regression.
+    Schema 3: results are organized per method under "methods", each a dict
+    {name, energies, final_iter, timings, spectral?}:
+      - energies: list of per-iteration {iter, e1b, ehf, ecorr} records
+      - final_iter: the run's last/converged iteration index (h5 `iter`)
+      - timings: first-iteration wallclock (hf build, solver total)
+      - spectral: AC observables (vbm/cbm/gaps), gw only, when AC ran
+    Timings and spectral stay separate from the per-iteration energies so
+    timing/AC churn can't be mistaken for a physical energy regression.
     """
     payload = {
-        "schema": 2,
+        "schema": 3,
         "mbpt_version": mbpt_ver,
         "mbtools_version": mbtools_ver,
         "methods": methods,
@@ -87,13 +92,32 @@ def write_result(
 
 
 def flatten_result(result: dict) -> tuple[dict[str, float], dict[str, float]]:
-    """Flatten a schema-2 result into ('method/key' -> value) observable and
-    timing dicts, for cross-version tabulation."""
+    """Flatten a result into ('method/key' -> value) observable and timing
+    dicts, for cross-version tabulation.
+
+    schema 3: the headline observable per method is the energy record at
+    'final_iter' (fallback: last iteration); 'spectral' (vbm/cbm/gaps) is
+    merged in as-is. Per-iteration detail is intentionally not flattened here
+    — it lives in the JSON for tools that need it. schema 2 ('observables')
+    is still accepted so older result files keep tabulating.
+    """
     obs: dict[str, float] = {}
     timings: dict[str, float] = {}
     for mname, mblock in result.get("methods", {}).items():
-        for k, v in mblock.get("observables", {}).items():
-            obs[f"{mname}/{k}"] = v
+        energies = mblock.get("energies")
+        if energies is not None:                              # schema 3
+            final = mblock.get("final_iter")
+            rec = next((e for e in energies if e.get("iter") == final), None)
+            if rec is None and energies:
+                rec = energies[-1]
+            for k in ("e1b", "ehf", "ecorr"):
+                if rec and k in rec:
+                    obs[f"{mname}/{k}"] = rec[k]
+            for k, v in mblock.get("spectral", {}).items():
+                obs[f"{mname}/{k}"] = v
+        else:                                                 # schema 2
+            for k, v in mblock.get("observables", {}).items():
+                obs[f"{mname}/{k}"] = v
         for k, v in mblock.get("timings", {}).items():
             timings[f"{mname}/{k}"] = v
     return obs, timings
