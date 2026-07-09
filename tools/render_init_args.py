@@ -14,6 +14,11 @@ NOTE flag names assumed (run `python init_data_df.py --help` and adjust):
   --a, --atom, --basis, --auxbasis, --pseudo, --xc, --x2c,
   --nk (k-mesh), --beta, --grid_file, --output
 
+  init's --beta is the even-tempered-basis exponent ratio (a DFT-side basis
+  knob, from basis.etb_beta), emitted only when that key is set. It is NOT
+  the Matsubara inverse temperature mesh.beta, which goes to mbpt/ac as
+  --BETA. Conflating the two (mesh.beta=100 as an ETB ratio) breaks the SCF.
+
 Mapping:
   system.relativistic   -> --x2c
     none      -> 0
@@ -73,8 +78,17 @@ def render(manifest: dict) -> list[str]:
     args: list[str] = []
     args += ["--basis", basis["name"]]
     aux = basis.get("auxbasis")
-    if aux and aux != "none":
+    aux_explicit = bool(aux and aux != "none")
+    if aux_explicit:
         args += ["--auxbasis", aux]
+
+    # init's --beta = even-tempered-basis exponent ratio (basis.etb_beta),
+    # distinct from the Matsubara mesh.beta (mbpt/ac --BETA). It only applies
+    # when the aux basis is auto-generated, so it is ignored when an explicit
+    # auxbasis is set. Emit only when set AND no explicit auxbasis.
+    etb_beta = basis.get("etb_beta")
+    if etb_beta is not None and not aux_explicit:
+        args += ["--beta", str(etb_beta)]
 
     pseudo = sys_.get("pseudo", "none")
     if pseudo and pseudo != "none":
@@ -102,9 +116,6 @@ def render(manifest: dict) -> list[str]:
         args += ["--atom", _atom_lines_molecular(sys_["geometry"])]
         if "spin" in sys_:
             args += ["--spin", str(sys_["spin"])]
-
-    if "beta" in mesh:
-        args += ["--beta", str(mesh["beta"])]
 
     args += ["--df_int", "1"]
     return args
