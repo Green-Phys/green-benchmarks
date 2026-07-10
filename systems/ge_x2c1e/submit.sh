@@ -20,7 +20,7 @@ mkdir -p "$(dirname "$LOG_INIT")" "$(dirname "$LOG_MBPT")" "$(dirname "$LOG_AC")
 
 # x2c1e spinor: roughly 1.5x the work of sfx2c1e.
 INIT_JID=$(sbatch --parsable --export="$EXPORTS" \
-    --nodes=1 --ntasks-per-node=1 --cpus-per-task=16 --time=01:30:00 \
+    --nodes=1 --ntasks-per-node=1 --cpus-per-task=16 --time=12:00:00 \
     --partition="$SLURM_PARTITION_AUX" \
     --output="$LOG_INIT" \
     "$BENCH_ROOT/templates/init.sbatch")
