@@ -37,8 +37,8 @@ mesh:
 
 methods:
   # All-electron Ge: GF2 is omitted by request (cost vs. value).
-  # Cross-version reproducibility experiment: HF runs 2 iterations, GW 20
-  # (PBE seed, def2-universal-jkfit aux). Analytic continuation is skipped
-  # (SKIP_AC=1 in submit.sh) so only the energy observables are extracted.
+  # Cross-version reproducibility: HF runs 2 iterations, GW 20 (PBE seed,
+  # def2-universal-jkfit aux). Analytic continuation runs for the GW
+  # spectral observables (vbm/cbm/gaps).
   - { type: hf, itermax: 2 }
   - { type: gw, itermax: 20, threshold: 1.0e-9 }
