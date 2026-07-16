@@ -62,7 +62,9 @@ srun ac.exe \
     --kind        Nevanlinna
 
 # Persist results JSON keyed by detected (mbpt-ver, mbtools-ver).
+# Derive --kernel from AC_SUBDIR: ac_gpu => gpu, ac => cpu.
 python "$BENCH_ROOT/tools/extract_results.py" \
     --system   "$SYSTEM" \
     --manifest "$MANIFEST" \
-    --work-dir "$BENCH_SCRATCH/$GREEN_VER/$SYSTEM"
+    --work-dir "$BENCH_SCRATCH/$GREEN_VER/$SYSTEM" \
+    --kernel   "$([[ "$AC_SUBDIR" == ac_gpu ]] && echo gpu || echo cpu)"

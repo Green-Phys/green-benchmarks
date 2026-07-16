@@ -83,10 +83,11 @@ done
 # tools/extract_results.py — never runs. Do the energy-only extraction here
 # instead. Spectral observables (vbm/cbm/gaps) need the AC output and are
 # simply omitted; extract_results degrades gracefully when it's absent.
-if [[ "${SKIP_AC:-0}" == 1 && "$MBPT_SUBDIR" == mbpt ]]; then
+if [[ "${SKIP_AC:-0}" == 1 ]]; then
     echo "=== SKIP_AC=1: extracting energies (no analytic continuation) ==="
     python "$BENCH_ROOT/tools/extract_results.py" \
         --system   "$SYSTEM" \
         --manifest "$MANIFEST" \
-        --work-dir "$BENCH_SCRATCH/$GREEN_VER/$SYSTEM"
+        --work-dir "$BENCH_SCRATCH/$GREEN_VER/$SYSTEM" \
+        --kernel   "$([[ "$MBPT_KERNEL" == GPU ]] && echo gpu || echo cpu)"
 fi

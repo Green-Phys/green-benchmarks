@@ -61,6 +61,7 @@ def write_result(
     mbtools_ver: str,
     methods: dict[str, dict[str, Any]],
     extras: dict[str, Any] | None = None,
+    kernel: str = "cpu",
 ) -> pathlib.Path:
     """Persist a results JSON, atomically.
 
@@ -72,17 +73,24 @@ def write_result(
       - spectral: AC observables (vbm/cbm/gaps), gw only, when AC ran
     Timings and spectral stay separate from the per-iteration energies so
     timing/AC churn can't be mistaken for a physical energy regression.
+
+    kernel: "cpu" (default) or "gpu". GPU runs get a `_gpu` filename suffix
+    and a "kernel" field in the payload so results stay distinct.
     """
     payload = {
         "schema": 3,
         "mbpt_version": mbpt_ver,
         "mbtools_version": mbtools_ver,
+        "kernel": kernel,
         "methods": methods,
     }
     if extras:
         payload["extras"] = extras
 
-    out = results_dir(system_name) / result_filename(mbpt_ver, mbtools_ver)
+    base = result_filename(mbpt_ver, mbtools_ver)
+    if kernel == "gpu":
+        base = base.replace(".json", "_gpu.json")
+    out = results_dir(system_name) / base
     tmp = out.with_suffix(out.suffix + ".tmp")
     with open(tmp, "w") as fh:
         json.dump(payload, fh, indent=2, sort_keys=True)
