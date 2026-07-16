@@ -16,8 +16,17 @@ set -euo pipefail
 source "$BENCH_ROOT/env.sh"
 source "$BENCH_ROOT/tools/activate_env.sh"
 
+# Kernel + output subdir. Defaults reproduce the original CPU behaviour
+# (subdir "mbpt", no --kernel flag). The GPU job sets MBPT_KERNEL=GPU and
+# MBPT_SUBDIR=mbpt_gpu (see tools/submit_chain.sh) so it writes to a separate
+# dir and does not clobber the CPU results.
+MBPT_KERNEL="${MBPT_KERNEL:-CPU}"
+MBPT_SUBDIR="${MBPT_SUBDIR:-mbpt}"
+KERNEL_FLAG=""
+[[ "$MBPT_KERNEL" != "CPU" ]] && KERNEL_FLAG="--kernel $MBPT_KERNEL"
+
 INPUT="$BENCH_SCRATCH/$SYSTEM/init/$GREEN_VER/input.h5"
-WORK="$BENCH_SCRATCH/$SYSTEM/mbpt/$GREEN_VER"
+WORK="$BENCH_SCRATCH/$SYSTEM/$MBPT_SUBDIR/$GREEN_VER"
 mkdir -p "$WORK"
 cd "$WORK"
 
@@ -65,7 +74,8 @@ for scf_type in $METHODS; do
         --grid_file        "$GRID_FILE" \
         --BETA             "$BETA" \
         --results_file     "$OUT" \
-        --restart          false
+        --restart          false \
+        $KERNEL_FLAG
 done
 
 # When analytic continuation is skipped for this system (SKIP_AC=1, set in
@@ -73,7 +83,7 @@ done
 # tools/extract_results.py — never runs. Do the energy-only extraction here
 # instead. Spectral observables (vbm/cbm/gaps) need the AC output and are
 # simply omitted; extract_results degrades gracefully when it's absent.
-if [[ "${SKIP_AC:-0}" == 1 ]]; then
+if [[ "${SKIP_AC:-0}" == 1 && "$MBPT_SUBDIR" == mbpt ]]; then
     echo "=== SKIP_AC=1: extracting energies (no analytic continuation) ==="
     python "$BENCH_ROOT/tools/extract_results.py" \
         --system   "$SYSTEM" \

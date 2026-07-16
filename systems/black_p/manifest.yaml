@@ -1,0 +1,40 @@
+# Black P — black phosphorus (Cmce, #64), conventional 8-atom cell.
+# Only orthorhombic case, non-symmorphic. a = 3.313, b = 10.473, c = 4.374 Å (experimental).
+
+system:
+  name: black_p
+  kind: solid
+  geometry:
+    lattice:
+      a: 1.0
+      vectors:
+        - [3.313000, 0.000000, 0.000000]
+        - [0.000000, 10.473000, 0.000000]
+        - [0.000000, 0.000000, 4.374000]
+    atoms:
+      - { element: P , frac: [0.000000, 0.101680, 0.080560] }
+      - { element: P , frac: [0.000000, 0.398320, 0.580560] }
+      - { element: P , frac: [0.000000, 0.601680, 0.419440] }
+      - { element: P , frac: [0.000000, 0.898320, 0.919440] }
+      - { element: P , frac: [0.500000, 0.601680, 0.080560] }
+      - { element: P , frac: [0.500000, 0.898320, 0.580560] }
+      - { element: P , frac: [0.500000, 0.101680, 0.419440] }
+      - { element: P , frac: [0.500000, 0.398320, 0.919440] }
+  pseudo: gth-pbe
+  relativistic: none
+
+basis:
+  name: gth-dzvp-molopt-sr
+  auxbasis: none
+  beta: 2.5
+
+init:
+  xc: pbe     # DFT-PBE mean-field starting point for init_data_df.py
+
+mesh:
+  k: [3, 3, 3]
+  beta: 100
+  grid_file: ir/1e5.h5
+
+methods:
+  - { type: gw, itermax: 30, threshold: 1.0e-7 }

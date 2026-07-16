@@ -22,15 +22,15 @@ system:
 basis:
   name: gth-dzvp-molopt-sr
   auxbasis: none
-  beta: 3.0
+  beta: 2.5
 
 init:
   xc: pbe     # DFT-PBE mean-field starting point for init_data_df.py
 
 mesh:
   k: [4, 4, 4]
-  beta: 1000
-  grid_file: ir/1e4.h5
+  beta: 100
+  grid_file: ir/1e5.h5
 
 methods:
   - { type: hf,  itermax: 1 }

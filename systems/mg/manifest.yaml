@@ -1,0 +1,34 @@
+# Mg — HCP metal (P6_3/mmc, #194), 2-atom cell.
+# a = 3.209, c = 5.211 Å (experimental).
+
+system:
+  name: mg
+  kind: solid
+  geometry:
+    lattice:
+      a: 1.0
+      vectors:
+        - [3.209000, 0.000000, 0.000000]
+        - [-1.604500, 2.779076, 0.000000]
+        - [0.000000, 0.000000, 5.211000]
+    atoms:
+      - { element: Mg, frac: [0.333333, 0.666667, 0.250000] }
+      - { element: Mg, frac: [0.666667, 0.333333, 0.750000] }
+  pseudo: gth-pbe
+  relativistic: none
+
+basis:
+  name: gth-dzvp-molopt-sr
+  auxbasis: none
+  beta: 2.5
+
+init:
+  xc: pbe     # DFT-PBE mean-field starting point for init_data_df.py
+
+mesh:
+  k: [3, 3, 3]
+  beta: 100
+  grid_file: ir/1e5.h5
+
+methods:
+  - { type: gw, itermax: 30, threshold: 1.0e-7 }

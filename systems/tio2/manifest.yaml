@@ -1,0 +1,44 @@
+# TiO2 — anatase (I4_1/amd, #141), conventional 12-atom cell.
+# Non-symmorphic tetragonal. a = 3.785, c = 9.514 Å, z(O) = 0.208 (experimental).
+
+system:
+  name: tio2
+  kind: solid
+  geometry:
+    lattice:
+      a: 1.0
+      vectors:
+        - [3.785000, 0.000000, 0.000000]
+        - [0.000000, 3.785000, 0.000000]
+        - [0.000000, 0.000000, 9.514000]
+    atoms:
+      - { element: Ti, frac: [0.000000, 0.000000, 0.000000] }
+      - { element: Ti, frac: [0.500000, 0.500000, 0.500000] }
+      - { element: Ti, frac: [0.000000, 0.500000, 0.250000] }
+      - { element: Ti, frac: [0.500000, 0.000000, 0.750000] }
+      - { element: O , frac: [0.000000, 0.000000, 0.208100] }
+      - { element: O , frac: [0.500000, 0.500000, 0.708100] }
+      - { element: O , frac: [0.000000, 0.500000, 0.458100] }
+      - { element: O , frac: [0.500000, 0.000000, 0.958100] }
+      - { element: O , frac: [0.500000, 0.000000, 0.541900] }
+      - { element: O , frac: [0.000000, 0.500000, 0.041900] }
+      - { element: O , frac: [0.500000, 0.500000, 0.291900] }
+      - { element: O , frac: [0.000000, 0.000000, 0.791900] }
+  pseudo: gth-pbe
+  relativistic: none
+
+basis:
+  name: gth-dzvp-molopt-sr
+  auxbasis: none
+  beta: 2.5
+
+init:
+  xc: pbe     # DFT-PBE mean-field starting point for init_data_df.py
+
+mesh:
+  k: [3, 3, 3]
+  beta: 100
+  grid_file: ir/1e5.h5
+
+methods:
+  - { type: gw, itermax: 30, threshold: 1.0e-7 }

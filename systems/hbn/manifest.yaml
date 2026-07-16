@@ -1,0 +1,36 @@
+# hBN — layered hexagonal BN (P6_3/mmc, #194), 4-atom cell.
+# Non-symmorphic, centrosymmetric. a = 2.504, c = 6.661 Å (experimental).
+
+system:
+  name: hbn
+  kind: solid
+  geometry:
+    lattice:
+      a: 1.0
+      vectors:
+        - [2.504000, 0.000000, 0.000000]
+        - [-1.252000, 2.168528, 0.000000]
+        - [0.000000, 0.000000, 6.661000]
+    atoms:
+      - { element: B , frac: [0.333333, 0.666667, 0.250000] }
+      - { element: B , frac: [0.666667, 0.333333, 0.750000] }
+      - { element: N , frac: [0.333333, 0.666667, 0.750000] }
+      - { element: N , frac: [0.666667, 0.333333, 0.250000] }
+  pseudo: gth-pbe
+  relativistic: none
+
+basis:
+  name: gth-dzvp-molopt-sr
+  auxbasis: none
+  beta: 2.5
+
+init:
+  xc: pbe     # DFT-PBE mean-field starting point for init_data_df.py
+
+mesh:
+  k: [4, 4, 1]
+  beta: 100
+  grid_file: ir/1e5.h5
+
+methods:
+  - { type: gw, itermax: 30, threshold: 1.0e-7 }

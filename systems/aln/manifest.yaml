@@ -1,0 +1,36 @@
+# AlN — wurtzite (P6_3mc, #186), 4-atom cell.
+# Polar, non-centrosymmetric. a = 3.111, c = 4.981 Å, u = 0.382 (experimental).
+
+system:
+  name: aln
+  kind: solid
+  geometry:
+    lattice:
+      a: 1.0
+      vectors:
+        - [3.111000, 0.000000, 0.000000]
+        - [-1.555500, 2.694205, 0.000000]
+        - [0.000000, 0.000000, 4.981000]
+    atoms:
+      - { element: Al, frac: [0.333333, 0.666667, 0.000000] }
+      - { element: Al, frac: [0.666667, 0.333333, 0.500000] }
+      - { element: N , frac: [0.333333, 0.666667, 0.382100] }
+      - { element: N , frac: [0.666667, 0.333333, 0.882100] }
+  pseudo: gth-pbe
+  relativistic: none
+
+basis:
+  name: gth-dzvp-molopt-sr
+  auxbasis: none
+  beta: 2.5
+
+init:
+  xc: pbe     # DFT-PBE mean-field starting point for init_data_df.py
+
+mesh:
+  k: [3, 3, 3]
+  beta: 100
+  grid_file: ir/1e5.h5
+
+methods:
+  - { type: gw, itermax: 30, threshold: 1.0e-7 }

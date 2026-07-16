@@ -1,0 +1,42 @@
+# Al2O3 — corundum (R-3c, #167), 10-atom rhombohedral primitive cell.
+# Non-symmorphic trigonal. Hex setting a = 4.759, c = 12.991 Å (experimental).
+
+system:
+  name: al2o3
+  kind: solid
+  geometry:
+    lattice:
+      a: 1.0
+      vectors:
+        - [2.379500, 1.373805, 4.330333]
+        - [-2.379500, 1.373805, 4.330333]
+        - [0.000000, -2.747610, 4.330333]
+    atoms:
+      - { element: Al, frac: [0.352160, 0.352160, 0.352160] }
+      - { element: Al, frac: [0.147840, 0.147840, 0.147840] }
+      - { element: Al, frac: [0.647840, 0.647840, 0.647840] }
+      - { element: Al, frac: [0.852160, 0.852160, 0.852160] }
+      - { element: O , frac: [0.556240, 0.943760, 0.250000] }
+      - { element: O , frac: [0.250000, 0.556240, 0.943760] }
+      - { element: O , frac: [0.943760, 0.250000, 0.556240] }
+      - { element: O , frac: [0.443760, 0.056240, 0.750000] }
+      - { element: O , frac: [0.750000, 0.443760, 0.056240] }
+      - { element: O , frac: [0.056240, 0.750000, 0.443760] }
+  pseudo: gth-pbe
+  relativistic: none
+
+basis:
+  name: gth-dzvp-molopt-sr
+  auxbasis: none
+  beta: 2.5
+
+init:
+  xc: pbe     # DFT-PBE mean-field starting point for init_data_df.py
+
+mesh:
+  k: [3, 3, 3]
+  beta: 100
+  grid_file: ir/1e5.h5
+
+methods:
+  - { type: gw, itermax: 30, threshold: 1.0e-7 }

@@ -1,0 +1,38 @@
+# MgF2 — rutile-type (P4_2/mnm, #136), 6-atom cell.
+# Non-symmorphic tetragonal. a = 4.621, c = 3.052 Å, u = 0.303 (experimental).
+
+system:
+  name: mgf2
+  kind: solid
+  geometry:
+    lattice:
+      a: 1.0
+      vectors:
+        - [4.621000, 0.000000, 0.000000]
+        - [0.000000, 4.621000, 0.000000]
+        - [0.000000, 0.000000, 3.052000]
+    atoms:
+      - { element: Mg, frac: [0.000000, 0.000000, 0.000000] }
+      - { element: Mg, frac: [0.500000, 0.500000, 0.500000] }
+      - { element: F , frac: [0.303000, 0.303000, 0.000000] }
+      - { element: F , frac: [0.697000, 0.697000, 0.000000] }
+      - { element: F , frac: [0.197000, 0.803000, 0.500000] }
+      - { element: F , frac: [0.803000, 0.197000, 0.500000] }
+  pseudo: gth-pbe
+  relativistic: none
+
+basis:
+  name: gth-dzvp-molopt-sr
+  auxbasis: none
+  beta: 2.5
+
+init:
+  xc: pbe     # DFT-PBE mean-field starting point for init_data_df.py
+
+mesh:
+  k: [3, 3, 3]
+  beta: 100
+  grid_file: ir/1e5.h5
+
+methods:
+  - { type: gw, itermax: 30, threshold: 1.0e-7 }

@@ -1,0 +1,38 @@
+# MgH2 — rutile-type (P4_2/mnm, #136), 6-atom cell.
+# Same SG as MgF2, lightest. a = 4.501, c = 3.010 Å, u = 0.304 (experimental).
+
+system:
+  name: mgh2
+  kind: solid
+  geometry:
+    lattice:
+      a: 1.0
+      vectors:
+        - [4.501000, 0.000000, 0.000000]
+        - [0.000000, 4.501000, 0.000000]
+        - [0.000000, 0.000000, 3.010000]
+    atoms:
+      - { element: Mg, frac: [0.000000, 0.000000, 0.000000] }
+      - { element: Mg, frac: [0.500000, 0.500000, 0.500000] }
+      - { element: H , frac: [0.304300, 0.304300, 0.000000] }
+      - { element: H , frac: [0.695700, 0.695700, 0.000000] }
+      - { element: H , frac: [0.195700, 0.804300, 0.500000] }
+      - { element: H , frac: [0.804300, 0.195700, 0.500000] }
+  pseudo: gth-pbe
+  relativistic: none
+
+basis:
+  name: gth-dzvp-molopt-sr
+  auxbasis: none
+  beta: 2.5
+
+init:
+  xc: pbe     # DFT-PBE mean-field starting point for init_data_df.py
+
+mesh:
+  k: [3, 3, 3]
+  beta: 100
+  grid_file: ir/1e5.h5
+
+methods:
+  - { type: gw, itermax: 30, threshold: 1.0e-7 }

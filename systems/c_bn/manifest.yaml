@@ -1,0 +1,34 @@
+# c-BN — cubic (zinc-blende) BN (F-43m, #216), 2-atom primitive cell.
+# Non-centrosymmetric. a = 3.615 Å (experimental).
+
+system:
+  name: c_bn
+  kind: solid
+  geometry:
+    lattice:
+      a: 3.615
+      vectors:
+        - [0.0000, 0.5000, 0.5000]
+        - [0.5000, 0.0000, 0.5000]
+        - [0.5000, 0.5000, 0.0000]
+    atoms:
+      - { element: B , frac: [0.000000, 0.000000, 0.000000] }
+      - { element: N , frac: [0.250000, 0.250000, 0.250000] }
+  pseudo: gth-pbe
+  relativistic: none
+
+basis:
+  name: gth-dzvp-molopt-sr
+  auxbasis: none
+  beta: 2.5
+
+init:
+  xc: pbe     # DFT-PBE mean-field starting point for init_data_df.py
+
+mesh:
+  k: [3, 3, 3]
+  beta: 100
+  grid_file: ir/1e5.h5
+
+methods:
+  - { type: gw, itermax: 30, threshold: 1.0e-7 }
