@@ -129,3 +129,59 @@ def render_system_report(system, classes, *, tol_kernel_energy, tol_ver_pct):
                 out.append("|--|--|--|--|--|--|--|")
                 out += gap_lines + [""]
     return "\n".join(out)
+
+
+import argparse
+
+ROLL_START = "<!-- kernel-report:start -->"
+ROLL_END = "<!-- kernel-report:end -->"
+
+
+def rollup_line(system, classes, *, tol_kernel_energy):
+    v, worst = verdict(classes, tol_kernel_energy)
+    return f"| {system} | {v} | {worst:.2e} |"
+
+
+def _write_rollup(results_md: Path, lines):
+    header = ("## cpu/gpu kernel agreement\n\n"
+              "| system | verdict | worst cpu/gpu energy Δ (Ha) |\n|--|--|--|\n")
+    block = f"{ROLL_START}\n{header}" + "\n".join(lines) + f"\n{ROLL_END}\n"
+    text = results_md.read_text() if results_md.exists() else "# RESULTS\n"
+    if ROLL_START in text and ROLL_END in text:
+        pre = text.split(ROLL_START)[0]
+        post = text.split(ROLL_END)[1]
+        text = pre + block + post
+    else:
+        text = text.rstrip() + "\n\n" + block
+    results_md.write_text(text)
+
+
+def main():
+    import _lib
+    from _lib import iter_systems
+    ap = argparse.ArgumentParser()
+    ap.add_argument("--old", required=True, help="e.g. v032_0.3.0")
+    ap.add_argument("--new", required=True, help="e.g. v100a0_1.0.0a1")
+    ap.add_argument("--tol-kernel-energy", type=float, default=1e-6)
+    ap.add_argument("--tol-ver-pct", type=float, default=0.1)
+    args = ap.parse_args()
+    lines = []
+    for manifest_path in iter_systems():
+        system_dir = manifest_path.parent
+        system_name = system_dir.name
+        classes = load_classes(system_dir, args.old, args.new)
+        if not any(classes.values()):
+            continue
+        md = render_system_report(system_name, classes,
+                                  tol_kernel_energy=args.tol_kernel_energy,
+                                  tol_ver_pct=args.tol_ver_pct)
+        (system_dir / "results").mkdir(exist_ok=True)
+        (system_dir / "results" / "report.md").write_text(md)
+        lines.append(rollup_line(system_name, classes,
+                                 tol_kernel_energy=args.tol_kernel_energy))
+    _write_rollup(_lib.REPO_ROOT / "RESULTS.md", lines)
+    print(f"wrote {len(lines)} system reports + RESULTS.md roll-up")
+
+
+if __name__ == "__main__":
+    main()
