@@ -22,7 +22,7 @@ system:
 basis:
   name: gth-dzvp-molopt-sr
   auxbasis: none
-  beta: 2.5
+  etb_beta: 2.5
 
 init:
   xc: pbe     # DFT-PBE mean-field starting point for init_data_df.py

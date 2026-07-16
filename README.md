@@ -33,7 +33,7 @@ here.
 A set of solids chosen to span distinct space groups, to exercise the k-point
 symmetry machinery (symmorphic vs non-symmorphic, centrosymmetric vs polar,
 insulators vs metals). Each runs **GW** on a **3×3×3** k-mesh with
-`gth-dzvp-molopt-sr` / `gth-pbe` (`auxbasis: none`, `beta: 2.5`), PBE
+`gth-dzvp-molopt-sr` / `gth-pbe` (`auxbasis: none`, `etb_beta: 2.5`), PBE
 mean-field. Geometries use experimental equilibrium lattice parameters
 (space group verified with spglib).
 
