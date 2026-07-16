@@ -18,8 +18,10 @@ set -euo pipefail
 source "$BENCH_ROOT/env.sh"
 source "$BENCH_ROOT/tools/activate_env.sh"
 
-AC_INPUT="$BENCH_SCRATCH/$GREEN_VER/$SYSTEM/mbpt/out_gw.h5"
-WORK="$BENCH_SCRATCH/$GREEN_VER/$SYSTEM/ac"
+AC_SUBDIR="${AC_SUBDIR:-ac}"                       # ac | ac_gpu
+MBPT_SUBDIR_FOR_AC="${MBPT_SUBDIR_FOR_AC:-mbpt}"   # mbpt | mbpt_gpu
+AC_INPUT="$BENCH_SCRATCH/$GREEN_VER/$SYSTEM/$MBPT_SUBDIR_FOR_AC/out_gw.h5"
+WORK="$BENCH_SCRATCH/$GREEN_VER/$SYSTEM/$AC_SUBDIR"
 AC_OUTPUT="$WORK/ac_gw.h5"
 
 # ac.exe is resolved via PATH ($GREEN_AC is prepended in env.sh), same as

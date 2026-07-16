@@ -80,6 +80,23 @@ if [[ "$MBPT_GPU" != 0 ]]; then
         "$BENCH_ROOT/templates/mbpt.sbatch")
 fi
 
+: "${AC_GPU:=$MBPT_GPU}"
+LOG_AC_GPU="$BENCH_SCRATCH/$GREEN_VER/$SYSTEM/ac_gpu/bench-ac-gpu-%j.out"
+mkdir -p "$(dirname "$LOG_AC_GPU")"
+AC_GPU_JID=""
+if [[ "$MBPT_GPU" != 0 && "$AC_GPU" != 0 ]]; then
+    # Identical to the CPU AC job (same ac.exe, same SLURM_AC_* resources, same
+    # AUX partition) — only the source mbpt dir and the output dir differ.
+    AC_GPU_JID=$(sbatch --parsable \
+        --export="$EXPORTS,AC_SUBDIR=ac_gpu,MBPT_SUBDIR_FOR_AC=mbpt_gpu" \
+        --dependency=afterok:$MBPT_GPU_JID \
+        --nodes="$SLURM_AC_NODES" --ntasks-per-node="$SLURM_AC_NTASKS_PER_NODE" \
+        --cpus-per-task="$SLURM_AC_CPUS" --time="$SLURM_AC_TIME" \
+        --partition="$SLURM_PARTITION_AUX" \
+        --output="$LOG_AC_GPU" \
+        "$BENCH_ROOT/templates/ac.sbatch")
+fi
+
 # AC — analytic continuation (on the CPU MBPT output).
 AC_JID=$(sbatch --parsable --export="$EXPORTS" \
     --dependency=afterok:$MBPT_JID \
@@ -89,4 +106,4 @@ AC_JID=$(sbatch --parsable --export="$EXPORTS" \
     --output="$LOG_AC" \
     "$BENCH_ROOT/templates/ac.sbatch")
 
-echo "queued: init=$INIT_JID  mbpt=$MBPT_JID  mbpt_gpu=${MBPT_GPU_JID:-skipped}  ac=$AC_JID  (system=$SYSTEM ver=$GREEN_VER)"
+echo "queued: init=$INIT_JID  mbpt=$MBPT_JID  mbpt_gpu=${MBPT_GPU_JID:-skipped}  ac=$AC_JID  ac_gpu=${AC_GPU_JID:-skipped}  (system=$SYSTEM ver=$GREEN_VER)"
