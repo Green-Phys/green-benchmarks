@@ -10,7 +10,7 @@
 #
 # Contract (do not break):
 #   In env :  BENCH_ROOT, BENCH_SCRATCH, SYSTEM, MANIFEST, GREEN_VER
-#   Out:      $BENCH_SCRATCH/$SYSTEM/init/$GREEN_VER/{input.h5, df_hf_int/, df_int/}
+#   Out:      $BENCH_SCRATCH/$GREEN_VER/$SYSTEM/init/{input.h5, df_hf_int/, df_int/}
 #             exit 0 on success; non-zero aborts the chain
 
 #SBATCH --job-name=bench-init
@@ -19,7 +19,7 @@ set -euo pipefail
 source "$BENCH_ROOT/env.sh"
 source "$BENCH_ROOT/tools/activate_env.sh"
 
-WORK="$BENCH_SCRATCH/$SYSTEM/init/$GREEN_VER"
+WORK="$BENCH_SCRATCH/$GREEN_VER/$SYSTEM/init"
 mkdir -p "$WORK"
 cd "$WORK"
 
@@ -33,8 +33,8 @@ export MKL_NUM_THREADS=${SLURM_CPUS_PER_TASK:-16}
 if [[ "$GREEN_VER" == *_patched ]]; then
     BASE_VER="${GREEN_VER%_patched}"     # e.g. v032
     HF_VER="v100a0"                      # symmetric-Fock source
-    BASE_DIR="$BENCH_SCRATCH/$SYSTEM/init/$BASE_VER"
-    HF_DIR="$BENCH_SCRATCH/$SYSTEM/init/$HF_VER"
+    BASE_DIR="$BENCH_SCRATCH/$BASE_VER/$SYSTEM/init"
+    HF_DIR="$BENCH_SCRATCH/$HF_VER/$SYSTEM/init"
     for d in "$BASE_DIR" "$HF_DIR"; do
         [[ -f "$d/input.h5" ]] || {
             echo "patched init needs $d/input.h5 (run $BASE_VER and $HF_VER first)" >&2

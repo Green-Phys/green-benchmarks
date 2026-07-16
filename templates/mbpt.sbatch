@@ -6,8 +6,8 @@
 #
 # Contract (do not break):
 #   In env :   BENCH_ROOT, BENCH_SCRATCH, SYSTEM, MANIFEST, GREEN_VER
-#   In files:  $BENCH_SCRATCH/$SYSTEM/init/$GREEN_VER/input.h5
-#   Out:       $BENCH_SCRATCH/$SYSTEM/mbpt/$GREEN_VER/out.h5
+#   In files:  $BENCH_SCRATCH/$GREEN_VER/$SYSTEM/init/input.h5
+#   Out:       $BENCH_SCRATCH/$GREEN_VER/$SYSTEM/mbpt/out.h5
 #              parseable log alongside, exit 0 on success
 
 #SBATCH --job-name=bench-mbpt
@@ -25,8 +25,8 @@ MBPT_SUBDIR="${MBPT_SUBDIR:-mbpt}"
 KERNEL_FLAG=""
 [[ "$MBPT_KERNEL" != "CPU" ]] && KERNEL_FLAG="--kernel $MBPT_KERNEL"
 
-INPUT="$BENCH_SCRATCH/$SYSTEM/init/$GREEN_VER/input.h5"
-WORK="$BENCH_SCRATCH/$SYSTEM/$MBPT_SUBDIR/$GREEN_VER"
+INPUT="$BENCH_SCRATCH/$GREEN_VER/$SYSTEM/init/input.h5"
+WORK="$BENCH_SCRATCH/$GREEN_VER/$SYSTEM/$MBPT_SUBDIR"
 mkdir -p "$WORK"
 cd "$WORK"
 
@@ -45,7 +45,7 @@ BETA=$(python -c "$_yaml print(m.get('mesh',{}).get('beta',100))")
 # Inputs are the init phase outputs (absolute paths so $WORK can move).
 # Solids produce separate Coulomb / HF-exchange integral dirs; molecular
 # init produces a single dir, so both point at the same df_hf_int.
-INIT_DIR="$BENCH_SCRATCH/$SYSTEM/init/$GREEN_VER"
+INIT_DIR="$BENCH_SCRATCH/$GREEN_VER/$SYSTEM/init"
 DF_HF_INT="$INIT_DIR/df_hf_int"
 if [[ "$KIND" == solid ]]; then
     DF_INT="$INIT_DIR/df_int"
@@ -88,5 +88,5 @@ if [[ "${SKIP_AC:-0}" == 1 && "$MBPT_SUBDIR" == mbpt ]]; then
     python "$BENCH_ROOT/tools/extract_results.py" \
         --system   "$SYSTEM" \
         --manifest "$MANIFEST" \
-        --work-dir "$BENCH_SCRATCH/$SYSTEM"
+        --work-dir "$BENCH_SCRATCH/$GREEN_VER/$SYSTEM"
 fi

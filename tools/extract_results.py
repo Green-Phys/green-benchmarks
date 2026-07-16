@@ -3,7 +3,7 @@
 
 Called at the end of templates/ac.sbatch. Reads:
   - the manifest (for the canonical observable id list + units)
-  - whatever green-mbpt/green-ac wrote into $BENCH_SCRATCH/<sys> (the
+  - whatever green-mbpt/green-ac wrote into $BENCH_SCRATCH/<ver>/<sys> (the
     mbpt out_*.h5, the ac ac_*.h5, and logs)
 
 Writes systems/<sys>/results/<mbpt-ver>_<mbtools-ver>.json via
@@ -72,13 +72,13 @@ def _green_ver() -> str:
 
 def _mbpt_log(work_dir: Path) -> Path | None:
     """Newest mbpt SLURM output (bench-mbpt-<jobid>.out) for this version."""
-    logs = sorted((work_dir / "mbpt" / _green_ver()).glob("bench-mbpt-*.out"))
+    logs = sorted((work_dir / "mbpt").glob("bench-mbpt-*.out"))
     return logs[-1] if logs else None
 
 
 def _ac_output(work_dir: Path) -> Path:
     """green-ac output (spectral function) for this version."""
-    return work_dir / "ac" / _green_ver() / "ac_gw.h5"
+    return work_dir / "ac" / "ac_gw.h5"
 
 
 # Number token: optional sign, decimal, exponent.
@@ -103,7 +103,7 @@ def _event_avg_all(text: str, event: str) -> list[float]:
 
 def _mbpt_out(work_dir: Path, method: str) -> Path:
     """Path to a method's mbpt HDF5 output (out_hf.h5 / out_gf2.h5 / ...)."""
-    return work_dir / "mbpt" / _green_ver() / f"out_{method}.h5"
+    return work_dir / "mbpt" / f"out_{method}.h5"
 
 
 def _h5_iteration_energies(path: Path) -> tuple[list[dict], int | None]:

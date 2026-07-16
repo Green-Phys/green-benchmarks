@@ -8,8 +8,8 @@
 #
 # Contract (do not break):
 #   In env :   BENCH_ROOT, BENCH_SCRATCH, SYSTEM, MANIFEST, GREEN_VER
-#   In files:  $BENCH_SCRATCH/$SYSTEM/mbpt/$GREEN_VER/out_gw.h5
-#   Out:       $BENCH_SCRATCH/$SYSTEM/ac/$GREEN_VER/ac_gw.h5
+#   In files:  $BENCH_SCRATCH/$GREEN_VER/$SYSTEM/mbpt/out_gw.h5
+#   Out:       $BENCH_SCRATCH/$GREEN_VER/$SYSTEM/ac/ac_gw.h5
 #              + results JSON via tools/extract_results.py
 
 #SBATCH --job-name=bench-ac
@@ -18,8 +18,8 @@ set -euo pipefail
 source "$BENCH_ROOT/env.sh"
 source "$BENCH_ROOT/tools/activate_env.sh"
 
-AC_INPUT="$BENCH_SCRATCH/$SYSTEM/mbpt/$GREEN_VER/out_gw.h5"
-WORK="$BENCH_SCRATCH/$SYSTEM/ac/$GREEN_VER"
+AC_INPUT="$BENCH_SCRATCH/$GREEN_VER/$SYSTEM/mbpt/out_gw.h5"
+WORK="$BENCH_SCRATCH/$GREEN_VER/$SYSTEM/ac"
 AC_OUTPUT="$WORK/ac_gw.h5"
 
 # ac.exe is resolved via PATH ($GREEN_AC is prepended in env.sh), same as
@@ -63,4 +63,4 @@ srun ac.exe \
 python "$BENCH_ROOT/tools/extract_results.py" \
     --system   "$SYSTEM" \
     --manifest "$MANIFEST" \
-    --work-dir "$BENCH_SCRATCH/$SYSTEM"
+    --work-dir "$BENCH_SCRATCH/$GREEN_VER/$SYSTEM"
