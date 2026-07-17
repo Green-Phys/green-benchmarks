@@ -70,8 +70,8 @@ Initial round:
 
 | Component     | Versions under test |
 |---------------|---------------------|
-| green-mbpt    | `0.3.2`, `1.0.0a0`  |
-| green-mbtools | `0.3.0`, `1.0.0a0`  |
+| green-mbpt    | `0.3.2`, `1.0.0-alpha` |
+| green-mbtools | `0.3.0`, `1.0.0-alpha` |
 
 Results land in `systems/<sys>/results/<mbpt-version>_<mbtools-version>.json`
 and aggregate to [`RESULTS.md`](RESULTS.md).
