@@ -33,8 +33,8 @@ source "$BENCH_ROOT/env.sh"
 : "${SLURM_AC_CPUS:=2}";     : "${SLURM_AC_TIME:=02:00:00}"
 : "${MBPT_GPU:=1}";          : "${SLURM_PARTITION_GPU:=blackwell}"
 : "${SLURM_MBPT_GPU_NODES:=1}";          : "${SLURM_MBPT_GPU_NTASKS_PER_NODE:=1}"
-: "${SLURM_MBPT_GPU_GPUS_PER_NODE:=1}";  : "${SLURM_MBPT_GPU_CPUS:=8}"
-: "${SLURM_MBPT_GPU_TIME:=06:00:00}";    : "${SLURM_MBPT_GPU_EXTRA=}"
+: "${SLURM_MBPT_GPU_CPUS:=8}";           : "${SLURM_MBPT_GPU_TIME:=06:00:00}"
+: "${SLURM_MBPT_GPU_GRES=}";             : "${SLURM_MBPT_GPU_EXTRA=--exclusive}"  # '=' keeps an explicit empty
 
 export MANIFEST="$BENCH_ROOT/systems/$SYSTEM/manifest.yaml"
 EXPORTS="ALL,BENCH_ROOT,BENCH_SCRATCH,SYSTEM,MANIFEST,GREEN_VER"
@@ -69,12 +69,17 @@ MBPT_JID=$(sbatch --parsable --export="$EXPORTS" \
 # Skipped when MBPT_GPU=0.
 MBPT_GPU_JID=""
 if [[ "$MBPT_GPU" != 0 ]]; then
+    # $SLURM_MBPT_GPU_GRES / $SLURM_MBPT_GPU_EXTRA are intentionally unquoted so
+    # an empty value expands to nothing. On pauli the GPU nodes carry no gpu
+    # gres, so GRES is empty and the job takes the whole node via --exclusive;
+    # mbpt.exe --kernel GPU uses the on-node GPU. Set SLURM_MBPT_GPU_GRES to
+    # "--gres=gpu:N" on clusters that schedule GPUs as a resource.
     MBPT_GPU_JID=$(sbatch --parsable \
         --export="$EXPORTS,MBPT_KERNEL=GPU,MBPT_SUBDIR=mbpt_gpu" \
         --dependency=afterok:$INIT_JID \
         --nodes="$SLURM_MBPT_GPU_NODES" --ntasks-per-node="$SLURM_MBPT_GPU_NTASKS_PER_NODE" \
-        --gpus-per-node="$SLURM_MBPT_GPU_GPUS_PER_NODE" \
-        --cpus-per-task="$SLURM_MBPT_GPU_CPUS" --time="$SLURM_MBPT_GPU_TIME" $SLURM_MBPT_GPU_EXTRA \
+        --cpus-per-task="$SLURM_MBPT_GPU_CPUS" --time="$SLURM_MBPT_GPU_TIME" \
+        $SLURM_MBPT_GPU_GRES $SLURM_MBPT_GPU_EXTRA \
         --partition="$SLURM_PARTITION_GPU" \
         --output="$LOG_MBPT_GPU" \
         "$BENCH_ROOT/templates/mbpt.sbatch")
