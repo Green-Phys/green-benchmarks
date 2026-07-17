@@ -1,14 +1,27 @@
 #!/usr/bin/env python3
-"""Cross-version + cpu/gpu kernel report for a system. Engine only here;
-rendering + CLI in later tasks."""
+"""Cross-version + cpu/gpu kernel report for a system.
+
+The engine is version-agnostic: the four simulation classes are addressed
+by ROLE — old/new (the two green-mbpt versions under comparison) crossed
+with cpu/gpu — never by a hardwired version tag. The actual tags are
+display-only, injected at render time from the ``--old`` / ``--new`` file
+tags (whose prefixes are exactly ``VERSION_OLD`` / ``VERSION_NEW`` in
+env.sh)."""
 from __future__ import annotations
 import json
 from pathlib import Path
 
 ENERGY_OBS = ("e1b", "ehf", "ecorr")
 GAP_OBS = ("direct_gap_gamma", "indirect_gap")
-# display label -> (version tag chooser, kernel)
-LABELS = ("v032", "v032_gpu", "v100", "v100_gpu")
+# the four simulation classes, addressed by role (not by version tag)
+CLASSES = ("old", "old_gpu", "new", "new_gpu")
+
+
+def label_from_tag(tag: str) -> str:
+    """Display label for a result file tag: the mbpt version prefix, e.g.
+    'v032_0.3.0' -> 'v032', 'v100a0_1.0.0a1' -> 'v100a0'. This prefix is
+    exactly VERSION_OLD / VERSION_NEW as set in env.sh."""
+    return tag.split("_", 1)[0]
 
 
 def _read(system_dir: Path, tag: str, gpu: bool):
@@ -19,10 +32,10 @@ def _read(system_dir: Path, tag: str, gpu: bool):
 
 def load_classes(system_dir, old_tag, new_tag):
     return {
-        "v032":     _read(system_dir, old_tag, False),
-        "v032_gpu": _read(system_dir, old_tag, True),
-        "v100":     _read(system_dir, new_tag, False),
-        "v100_gpu": _read(system_dir, new_tag, True),
+        "old":     _read(system_dir, old_tag, False),
+        "old_gpu": _read(system_dir, old_tag, True),
+        "new":     _read(system_dir, new_tag, False),
+        "new_gpu": _read(system_dir, new_tag, True),
     }
 
 
@@ -40,19 +53,19 @@ def _sub(a, b):
 
 
 def energy_diffs(classes, method):
-    per = {lab: _energies(classes.get(lab), method) for lab in LABELS}
+    per = {c: _energies(classes.get(c), method) for c in CLASSES}
     iters = sorted({i for d in per.values() for i in d})
     rows = []
     for obs in ENERGY_OBS:
         for it in iters:
-            v = {lab: (per[lab].get(it, {}) or {}).get(obs) for lab in LABELS}
+            v = {c: (per[c].get(it, {}) or {}).get(obs) for c in CLASSES}
             rows.append({
                 "obs": obs, "iter": it,
                 **v,
-                "d_ver_cpu": _sub(v["v100"], v["v032"]),
-                "d_ver_gpu": _sub(v["v100_gpu"], v["v032_gpu"]),
-                "d_cpu_gpu_old": _sub(v["v032"], v["v032_gpu"]),
-                "d_cpu_gpu_new": _sub(v["v100"], v["v100_gpu"]),
+                "d_ver_cpu": _sub(v["new"], v["old"]),
+                "d_ver_gpu": _sub(v["new_gpu"], v["old_gpu"]),
+                "d_cpu_gpu_old": _sub(v["old"], v["old_gpu"]),
+                "d_cpu_gpu_new": _sub(v["new"], v["new_gpu"]),
             })
     return rows
 
@@ -81,12 +94,15 @@ def _gaps(cls, obs):
     return (m.get("spectral") or {}).get(obs)
 
 
-def render_system_report(system, classes, *, tol_kernel_energy, tol_ver_pct):
+def render_system_report(system, classes, *, old_label, new_label,
+                         tol_kernel_energy, tol_ver_pct):
     v, worst = verdict(classes, tol_kernel_energy)
+    # column labels for the four classes
+    lo, log, ln, lng = old_label, f"{old_label}_gpu", new_label, f"{new_label}_gpu"
     out = [f"# {system} — cpu/gpu × version report", "",
            f"**Verdict:** {v} (worst cpu/gpu energy Δ = {worst:.2e} Ha)", ""]
     for method in ("hf", "gf2", "gw"):
-        if not any((classes.get(l) or {}).get("methods", {}).get(method) for l in LABELS):
+        if not any((classes.get(c) or {}).get("methods", {}).get(method) for c in CLASSES):
             continue
         out.append(f"## {method}")
         rows = energy_diffs(classes, method)
@@ -97,35 +113,35 @@ def render_system_report(system, classes, *, tol_kernel_energy, tol_ver_pct):
                 continue
             out.append(f"### {obs} (Ha)")
             if is_gw:
-                out.append("| iter | v032 | v032_gpu | v100 | v100_gpu | Δver_cpu | Δver_gpu | Δcpu/gpu@v032 | Δcpu/gpu@v100 |")
+                out.append(f"| iter | {lo} | {log} | {ln} | {lng} | Δver_cpu | Δver_gpu | Δcpu/gpu@{old_label} | Δcpu/gpu@{new_label} |")
                 out.append("|--|--|--|--|--|--|--|--|--|")
                 for r in sub:
                     flag = " ⚠" if (r["d_cpu_gpu_new"] is not None and abs(r["d_cpu_gpu_new"]) > tol_kernel_energy) else ""
-                    out.append("| {iter} | {v032} | {v032_gpu} | {v100} | {v100_gpu} | {dvc} | {dvg} | {dco} | {dcn}{f} |".format(
-                        iter=r["iter"], v032=_fmt(r["v032"]), v032_gpu=_fmt(r["v032_gpu"]),
-                        v100=_fmt(r["v100"]), v100_gpu=_fmt(r["v100_gpu"]),
+                    out.append("| {iter} | {a} | {b} | {c} | {d} | {dvc} | {dvg} | {dco} | {dcn}{f} |".format(
+                        iter=r["iter"], a=_fmt(r["old"]), b=_fmt(r["old_gpu"]),
+                        c=_fmt(r["new"]), d=_fmt(r["new_gpu"]),
                         dvc=_fmt(r["d_ver_cpu"]), dvg=_fmt(r["d_ver_gpu"]),
                         dco=_fmt(r["d_cpu_gpu_old"]), dcn=_fmt(r["d_cpu_gpu_new"]), f=flag))
             else:
-                out.append("| iter | v032 | v100 | Δver |")
+                out.append(f"| iter | {lo} | {ln} | Δver |")
                 out.append("|--|--|--|--|")
                 for r in sub:
-                    out.append(f"| {r['iter']} | {_fmt(r['v032'])} | {_fmt(r['v100'])} | {_fmt(r['d_ver_cpu'])} |")
+                    out.append(f"| {r['iter']} | {_fmt(r['old'])} | {_fmt(r['new'])} | {_fmt(r['d_ver_cpu'])} |")
             out.append("")
         if is_gw:
             gap_lines = []
             for obs in GAP_OBS:
-                vals = {l: _gaps(classes.get(l), obs) for l in LABELS}
+                vals = {c: _gaps(classes.get(c), obs) for c in CLASSES}
                 if all(x is None for x in vals.values()):
                     continue  # metal / no gap
                 gap_lines.append("| {o} | {a} | {b} | {c} | {d} | {e} | {f} |".format(
-                    o=obs, a=_fmt(vals["v032"]), b=_fmt(vals["v032_gpu"]),
-                    c=_fmt(vals["v100"]), d=_fmt(vals["v100_gpu"]),
-                    e=_fmt(_sub(vals["v100"], vals["v032"])),
-                    f=_fmt(_sub(vals["v100"], vals["v100_gpu"]))))
+                    o=obs, a=_fmt(vals["old"]), b=_fmt(vals["old_gpu"]),
+                    c=_fmt(vals["new"]), d=_fmt(vals["new_gpu"]),
+                    e=_fmt(_sub(vals["new"], vals["old"])),
+                    f=_fmt(_sub(vals["new"], vals["new_gpu"]))))
             if gap_lines:
                 out.append("### band gaps (eV, final iter — visual guide, no verdict)")
-                out.append("| gap | v032 | v032_gpu | v100 | v100_gpu | Δver_cpu | Δcpu/gpu@v100 |")
+                out.append(f"| gap | {lo} | {log} | {ln} | {lng} | Δver_cpu | Δcpu/gpu@{new_label} |")
                 out.append("|--|--|--|--|--|--|--|")
                 out += gap_lines + [""]
     return "\n".join(out)
@@ -160,11 +176,13 @@ def main():
     import _lib
     from _lib import iter_systems
     ap = argparse.ArgumentParser()
-    ap.add_argument("--old", required=True, help="e.g. v032_0.3.0")
-    ap.add_argument("--new", required=True, help="e.g. v100a0_1.0.0a1")
+    ap.add_argument("--old", required=True, help="old result tag, e.g. v032_0.3.0")
+    ap.add_argument("--new", required=True, help="new result tag, e.g. v100a0_1.0.0a1")
     ap.add_argument("--tol-kernel-energy", type=float, default=1e-6)
     ap.add_argument("--tol-ver-pct", type=float, default=0.1)
     args = ap.parse_args()
+    old_label = label_from_tag(args.old)
+    new_label = label_from_tag(args.new)
     lines = []
     for manifest_path in iter_systems():
         system_dir = manifest_path.parent
@@ -173,6 +191,7 @@ def main():
         if not any(classes.values()):
             continue
         md = render_system_report(system_name, classes,
+                                  old_label=old_label, new_label=new_label,
                                   tol_kernel_energy=args.tol_kernel_energy,
                                   tol_ver_pct=args.tol_ver_pct)
         (system_dir / "results").mkdir(exist_ok=True)

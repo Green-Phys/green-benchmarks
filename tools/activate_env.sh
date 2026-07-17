@@ -4,36 +4,41 @@
 #
 # Sourced (not exec'd) from every templates/*.sbatch *after* env.sh.
 #
-# Requires set:
-#   GREEN_VER                 v032 | v100a0 | v032_patched
-#   GREEN_ROOT_V032           install prefix for green-mbpt 0.3.2
-#   GREEN_ROOT_V100A0         install prefix for green-mbpt 1.0.0a0
-#   MBTOOLS_V032_CONDA_ENV    e.g. mbtools-v0.3.0
-#   MBTOOLS_V100A0_CONDA_ENV  e.g. mbtools-v1.0.0
-#   CONDA_BASE                conda installation root
+# Version-agnostic: for a tag $GREEN_VER it looks up GREEN_ROOT_<tag> and
+# MBTOOLS_<tag> from env.sh by shell indirection — no per-version case arms
+# here. Adding a release is purely an env.sh change (define its two vars).
+#
+# Requires set (in env.sh):
+#   GREEN_VER            the version tag, e.g. v032 | v100a0 (optionally with a
+#                        "_patched" suffix — a diagnostic run that reuses the
+#                        base version's install/env while init.sbatch swaps in
+#                        the other version's symmetric Fock)
+#   GREEN_ROOT_<tag>     install prefix for green-mbpt <tag>, e.g. GREEN_ROOT_v032
+#   MBTOOLS_<tag>        conda env name for green-mbtools <tag>, e.g. MBTOOLS_v032
+#   CONDA_BASE           conda installation root
 
 set -u
 
-case "${GREEN_VER:-}" in
-  v032)
-    GREEN_ROOT="$GREEN_ROOT_V032"
-    CONDA_ENV="$MBTOOLS_V032_CONDA_ENV"
-    ;;
-  v100a0)
-    GREEN_ROOT="$GREEN_ROOT_V100A0"
-    CONDA_ENV="$MBTOOLS_V100A0_CONDA_ENV"
-    ;;
-  v032_patched)
-    # patched diagnostic run: v032 solver/env + v032 grid, with v100a0's
-    # (symmetric) Fock swapped into input.h5 by templates/init.sbatch.
-    GREEN_ROOT="$GREEN_ROOT_V032"
-    CONDA_ENV="$MBTOOLS_V032_CONDA_ENV"
-    ;;
-  *)
-    echo "activate_env.sh: GREEN_VER must be v032, v100a0 or v032_patched, got '${GREEN_VER:-}'" >&2
-    return 2 2>/dev/null || exit 2
-    ;;
-esac
+# A "_patched" diagnostic run reuses the base version's install + conda env.
+BASE_VER="${GREEN_VER:-}"
+BASE_VER="${BASE_VER%_patched}"
+
+if [[ -z "$BASE_VER" ]]; then
+  echo "activate_env.sh: GREEN_VER must be set (e.g. v032, v100a0)" >&2
+  return 2 2>/dev/null || exit 2
+fi
+
+# Indirect lookup: GREEN_ROOT_<tag> / MBTOOLS_<tag>. Needs a tag with only
+# valid variable-name characters (no dots) — see env.sh VERSION_OLD/NEW note.
+_root_var="GREEN_ROOT_${BASE_VER}"
+_env_var="MBTOOLS_${BASE_VER}"
+GREEN_ROOT="${!_root_var:-}"
+CONDA_ENV="${!_env_var:-}"
+
+if [[ -z "$GREEN_ROOT" || -z "$CONDA_ENV" ]]; then
+  echo "activate_env.sh: no install/env for GREEN_VER='${GREEN_VER:-}' — set $_root_var and $_env_var in env.sh" >&2
+  return 2 2>/dev/null || exit 2
+fi
 
 # green-mbpt binary
 export PATH="$GREEN_ROOT/bin:$PATH"

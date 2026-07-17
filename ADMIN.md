@@ -31,16 +31,19 @@ $EDITOR env.sh         # fill in TBD entries — see comments inside
 | `SLURM_PARTITION_MBPT`  | fast pauli queue used for the heavy MBPT job               |
 | `SLURM_PARTITION_AUX`   | regular pauli queue for init (MF + integrals) and AC       |
 | `SLURM_ACCOUNT`         | optional, comment out if unused                            |
-| `GREEN_ROOT_V032`       | install prefix for green-mbpt 0.3.2 binaries               |
-| `GREEN_ROOT_V100A0`     | install prefix for green-mbpt 1.0.0a0 binaries             |
+| `VERSION_OLD` / `VERSION_NEW` | the two green-mbpt version tags under comparison (e.g. `v032`, `v100a0`) |
+| `GREEN_ROOT_<tag>`      | install prefix for green-mbpt `<tag>` binaries (e.g. `GREEN_ROOT_v032`) |
 | `GREEN_AC`              | dir with `ac.exe` (green-ac build; same across versions)   |
-| `MBTOOLS_V032_CONDA_ENV`| conda env name for green-mbtools 0.3.0 (e.g. `mbtools-v0.3.0`) |
-| `MBTOOLS_V100A0_CONDA_ENV` | conda env name for green-mbtools 1.0.0a0               |
+| `MBTOOLS_<tag>`         | conda env name for green-mbtools `<tag>` (e.g. `MBTOOLS_v032` = `mbtools-v0.3.0`) |
 | `CONDA_BASE`            | conda installation root (`$HOME/miniconda3`, `/opt/conda`) |
 
 Each conda env owns its python + green-mbtools install (including the
 compiled C++ extensions). `activate_env.sh` runs `conda activate $env`
-based on `$GREEN_VER`.
+based on `$GREEN_VER`, resolving `GREEN_ROOT_<tag>` / `MBTOOLS_<tag>` by
+indirection — so **adding a release is just two new lines in `env.sh`**
+(its `GREEN_ROOT_<tag>` and `MBTOOLS_<tag>`), no script edits. Version tags
+must be valid shell variable-name suffixes (letters/digits/underscore, no
+dots): use `v032` / `v100a0`, not `v0.3.2` / `v1.0.0a0`.
 
 Confirm both Green installs are reachable:
 
@@ -95,14 +98,17 @@ For a new Green release `<mbpt-ver>` + `<mbtools-ver>`:
 python tools/verify_manifest.py systems/*/manifest.yaml
 ```
 
-### 2.2 Submit the four-system suite, for each version
+### 2.2 Submit the full suite, for each version
 
 ```bash
 bash tools/run_all.sh
 ```
 
-This loops every system × version and submits each as an init → mbpt →
-ac chain (`sbatch --dependency=afterok`). Submit a subset with env vars:
+This loops **every system** (every `systems/*/manifest.yaml`) × **both
+versions** (`$VERSION_OLD $VERSION_NEW` from `env.sh`) and submits each as
+an init → mbpt → ac chain (`sbatch --dependency=afterok`). Preview the
+resolved matrix without submitting via `RUN_ALL_DRY=1 bash tools/run_all.sh`.
+Submit a subset with env vars:
 
 ```bash
 SYSTEMS="si n2" VERSIONS="v032" bash tools/run_all.sh

@@ -13,15 +13,37 @@
 #     JSONs into RESULTS.md, then commit (see ADMIN.md §2).
 #
 # Usage:
-#   bash tools/run_all.sh                          # all systems, both versions
+#   bash tools/run_all.sh                          # ALL systems, both versions
 #   SYSTEMS="si n2" VERSIONS="v032" bash tools/run_all.sh
 set -euo pipefail
 
 THIS_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
 BENCH_ROOT="$(cd "$THIS_DIR/.." && pwd)"
 
-SYSTEMS="${SYSTEMS:-n2 si ge_sfx2c1e ge_x2c1e}"
-VERSIONS="${VERSIONS:-v032 v100a0}"
+# Pull VERSION_OLD / VERSION_NEW (the pair under comparison) from env.sh.
+# env.sh is per-machine + gitignored; tolerate its absence and fall back to
+# the same defaults env.sh.template ships.
+[[ -f "$BENCH_ROOT/env.sh" ]] && source "$BENCH_ROOT/env.sh"
+: "${VERSION_OLD:=v032}"
+: "${VERSION_NEW:=v100a0}"
+
+# Default: every system with a manifest (mirrors tools/_lib.iter_systems()).
+# Override with SYSTEMS="si n2" to run a subset.
+if [[ -z "${SYSTEMS:-}" ]]; then
+  SYSTEMS=""
+  for _m in "$BENCH_ROOT"/systems/*/manifest.yaml; do
+    [[ -e "$_m" ]] || continue
+    SYSTEMS+=" $(basename "$(dirname "$_m")")"
+  done
+fi
+VERSIONS="${VERSIONS:-$VERSION_OLD $VERSION_NEW}"
+
+# RUN_ALL_DRY=1 previews the resolved matrix without submitting anything.
+if [[ "${RUN_ALL_DRY:-0}" == 1 ]]; then
+  echo "systems: $SYSTEMS"
+  echo "versions: $VERSIONS"
+  exit 0
+fi
 
 for s in $SYSTEMS; do
   for v in $VERSIONS; do
