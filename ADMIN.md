@@ -188,7 +188,7 @@ existing four do not.
   v032 and v100a0 runs:
   `GREEN_VER=v032_patched bash systems/<sys>/submit.sh`. It reuses v032's
   grid/integrals/solver but swaps in v100a0's HF Fock/S/H
-  (`tools/patch_input.py`); if the result (`0.3.2-patched_0.3.0.json`)
+  (`tools/diagnostics/patch_input.py`); if the result (`0.3.2-patched_0.3.0.json`)
   matches the v100a0 run, the init Fock was the cause, not the solver.
 - **HPC allocation lost**: out of scope for this repo. The suite stops
   running. This is the known bus factor.
