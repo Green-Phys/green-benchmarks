@@ -70,17 +70,15 @@ def _green_ver() -> str:
     return os.environ.get("GREEN_VER", "")
 
 
-def _mbpt_log(work_dir: Path, kernel: str = "cpu") -> Path | None:
+def _mbpt_log(work_dir: Path, mbpt_subdir: str = "mbpt") -> Path | None:
     """Newest mbpt SLURM output (bench-mbpt-<jobid>.out) for this version."""
-    subdir = "mbpt_gpu" if kernel == "gpu" else "mbpt"
-    logs = sorted((work_dir / subdir).glob("bench-mbpt-*.out"))
+    logs = sorted((work_dir / mbpt_subdir).glob("bench-mbpt-*.out"))
     return logs[-1] if logs else None
 
 
-def _ac_output(work_dir: Path, kernel: str = "cpu") -> Path:
+def _ac_output(work_dir: Path, ac_subdir: str = "ac") -> Path:
     """green-ac output (spectral function) for this version."""
-    subdir = "ac_gpu" if kernel == "gpu" else "ac"
-    return work_dir / subdir / "ac_gw.h5"
+    return work_dir / ac_subdir / "ac_gw.h5"
 
 
 # Number token: optional sign, decimal, exponent.
@@ -103,10 +101,9 @@ def _event_avg_all(text: str, event: str) -> list[float]:
     ]
 
 
-def _mbpt_out(work_dir: Path, method: str, kernel: str = "cpu") -> Path:
+def _mbpt_out(work_dir: Path, method: str, mbpt_subdir: str = "mbpt") -> Path:
     """Path to a method's mbpt HDF5 output (out_hf.h5 / out_gf2.h5 / ...)."""
-    subdir = "mbpt_gpu" if kernel == "gpu" else "mbpt"
-    return work_dir / subdir / f"out_{method}.h5"
+    return work_dir / mbpt_subdir / f"out_{method}.h5"
 
 
 def _h5_iteration_energies(path: Path) -> tuple[list[dict], int | None]:
@@ -200,12 +197,12 @@ _SOLVER_EVENT = {"gf2": "GF2 total", "gw": "total"}
 
 
 def _spectral_observables(work_dir: Path, kind: str,
-                           kernel: str = "cpu") -> dict[str, float]:
+                           ac_subdir: str = "ac") -> dict[str, float]:
     """IP/homo/lumo (molecular) or band gap/vbm/cbm/direct_gap_gamma (solid)
     from the green-ac output. Empty if the AC output is unavailable.
     homo/vbm = largest occupied peak; lumo/cbm = smallest unoccupied peak."""
     out: dict[str, float] = {}
-    peaks = _ac_spectral_peaks(_ac_output(work_dir, kernel))
+    peaks = _ac_spectral_peaks(_ac_output(work_dir, ac_subdir))
     if peaks is None:
         return out
     occ, unocc = peaks
@@ -233,7 +230,8 @@ def _spectral_observables(work_dir: Path, kind: str,
 
 
 def _method_result(name: str, work_dir: Path, kind: str,
-                   sections: dict[str, str], kernel: str = "cpu") -> dict:
+                   sections: dict[str, str], mbpt_subdir: str = "mbpt",
+                   ac_subdir: str = "ac") -> dict:
     """Build one method's {name, energies, final_iter, timings, spectral?}
     block (schema 3).
 
@@ -258,13 +256,13 @@ def _method_result(name: str, work_dir: Path, kind: str,
         if tot:
             block["timings"]["total"] = tot[0]    # first iteration only
 
-    energies, final_iter = _h5_iteration_energies(_mbpt_out(work_dir, name, kernel))
+    energies, final_iter = _h5_iteration_energies(_mbpt_out(work_dir, name, mbpt_subdir))
     block["energies"] = energies
     if final_iter is not None:
         block["final_iter"] = final_iter
 
     if name == "gw":
-        spectral = _spectral_observables(work_dir, kind, kernel)
+        spectral = _spectral_observables(work_dir, kind, ac_subdir)
         if spectral:
             block["spectral"] = spectral
 
@@ -279,17 +277,30 @@ def main() -> int:
     ap.add_argument("--kernel",   choices=["cpu", "gpu"], default="cpu",
                     help="Compute kernel used for mbpt (cpu or gpu). "
                          "GPU runs read mbpt_gpu/ac_gpu dirs and write a _gpu.json.")
+    ap.add_argument("--variant",  default=None,
+                    help="Optional run variant (e.g. 'full' for n2's "
+                         "full-GPU-memory run). Suffixes the scratch subdirs "
+                         "(mbpt_gpu_full/ac_gpu_full) and the result filename "
+                         "(..._gpu_full.json).")
     args = ap.parse_args()
 
     manifest = load_manifest(args.manifest)
     kind = manifest["system"]["kind"]
     mbpt_ver, mbtools_ver = _detect_versions()
 
-    log = _mbpt_log(args.work_dir, args.kernel)
+    # Scratch subdirs: base is mbpt/ac (cpu) or mbpt_gpu/ac_gpu (gpu); a
+    # variant appends _<variant> (e.g. mbpt_gpu_full). Energies-only variant
+    # runs have no AC dir, so spectral simply degrades to empty.
+    base_mbpt = "mbpt_gpu" if args.kernel == "gpu" else "mbpt"
+    base_ac = "ac_gpu" if args.kernel == "gpu" else "ac"
+    mbpt_subdir = f"{base_mbpt}_{args.variant}" if args.variant else base_mbpt
+    ac_subdir = f"{base_ac}_{args.variant}" if args.variant else base_ac
+
+    log = _mbpt_log(args.work_dir, mbpt_subdir)
     sections = _method_sections(log.read_text(errors="replace")) if log else {}
 
     methods = {
-        m: _method_result(m, args.work_dir, kind, sections, args.kernel)
+        m: _method_result(m, args.work_dir, kind, sections, mbpt_subdir, ac_subdir)
         for m in (x["type"].lower() for x in manifest["methods"])
     }
 
@@ -300,6 +311,7 @@ def main() -> int:
         methods=methods,
         extras={"extracted_at": time.strftime("%Y-%m-%dT%H:%M:%S%z")},
         kernel=args.kernel,
+        variant=args.variant,
     )
     print(f"wrote {out_path}")
     return 0

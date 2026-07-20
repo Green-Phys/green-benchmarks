@@ -44,3 +44,15 @@ def test_write_result_tags_kernel_gpu(tmp_path, monkeypatch):
     data = json.loads(out.read_text())
     assert data["kernel"] == "gpu"
     assert data["schema"] == 3
+
+
+def test_write_result_variant_suffixes_filename(tmp_path, monkeypatch):
+    """A variant (e.g. n2's full-memory GPU run) suffixes the filename after
+    the kernel tag and is recorded in the payload, so it stays distinct from
+    the standard _gpu result."""
+    monkeypatch.setattr(_lib, "results_dir", lambda name: tmp_path)
+    out = write_result("sys", "v032", "0.3.0", _METHODS, kernel="gpu", variant="full")
+    assert out == tmp_path / "v032_0.3.0_gpu_full.json"
+    data = json.loads(out.read_text())
+    assert data["kernel"] == "gpu"
+    assert data["variant"] == "full"

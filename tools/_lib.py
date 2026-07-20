@@ -62,6 +62,7 @@ def write_result(
     methods: dict[str, dict[str, Any]],
     extras: dict[str, Any] | None = None,
     kernel: str = "cpu",
+    variant: str | None = None,
 ) -> pathlib.Path:
     """Persist a results JSON, atomically.
 
@@ -76,6 +77,9 @@ def write_result(
 
     kernel: "cpu" (default) or "gpu". GPU runs get a `_gpu` filename suffix
     and a "kernel" field in the payload so results stay distinct.
+    variant: an optional extra tag (e.g. "full" for n2's full-GPU-memory run)
+    appended after the kernel suffix (…_gpu_full.json) and recorded in the
+    payload, keeping a variant run distinct from the standard one.
     """
     payload = {
         "schema": 3,
@@ -84,12 +88,17 @@ def write_result(
         "kernel": kernel,
         "methods": methods,
     }
+    if variant:
+        payload["variant"] = variant
     if extras:
         payload["extras"] = extras
 
+    suffix = "_gpu" if kernel == "gpu" else ""
+    if variant:
+        suffix += f"_{variant}"
     base = result_filename(mbpt_ver, mbtools_ver)
-    if kernel == "gpu":
-        base = base.replace(".json", "_gpu.json")
+    if suffix:
+        base = base.replace(".json", f"{suffix}.json")
     out = results_dir(system_name) / base
     tmp = out.with_suffix(out.suffix + ".tmp")
     with open(tmp, "w") as fh:

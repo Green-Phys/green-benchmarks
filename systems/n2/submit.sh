@@ -14,4 +14,9 @@ export SLURM_MBPT_TIME=00:30:00
 export SLURM_AC_NTASKS_PER_NODE=1
 export SLURM_AC_TIME=00:15:00
 
+# Also run a GPU MBPT case with the cuda low-memory path OFF (both flags
+# false), to check it against the default low-memory GPU run. Energies-only,
+# committed as <ver>_<mbtools>_gpu_full.json.
+export MBPT_GPU_FULL=1
+
 source "$(dirname "${BASH_SOURCE[0]}")/../../tools/submit_chain.sh"

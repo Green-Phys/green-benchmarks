@@ -85,6 +85,25 @@ if [[ "$MBPT_GPU" != 0 ]]; then
         "$BENCH_ROOT/templates/mbpt.sbatch")
 fi
 
+# Optional second GPU MBPT run with the cuda low-memory path OFF, for systems
+# that opt in via MBPT_GPU_FULL=1 in their submit.sh (currently just n2). Own
+# scratch subdir + variant tag; energies-only (SKIP_AC=1 -> mbpt.sbatch
+# self-extracts to <ver>_<mbtools>_gpu_full.json, no AC job).
+MBPT_GPU_FULL_JID=""
+if [[ "$MBPT_GPU" != 0 && "${MBPT_GPU_FULL:-0}" != 0 ]]; then
+    LOG_MBPT_GPU_FULL="$BENCH_SCRATCH/$GREEN_VER/$SYSTEM/mbpt_gpu_full/bench-mbpt-gpu-full-%j.out"
+    mkdir -p "$(dirname "$LOG_MBPT_GPU_FULL")"
+    MBPT_GPU_FULL_JID=$(sbatch --parsable \
+        --export="$EXPORTS,MBPT_KERNEL=GPU,MBPT_SUBDIR=mbpt_gpu_full,MBPT_CUDA_LOW_MEM=false,MBPT_VARIANT=full,SKIP_AC=1" \
+        --dependency=afterok:$INIT_JID \
+        --nodes="$SLURM_MBPT_GPU_NODES" --ntasks-per-node="$SLURM_MBPT_GPU_NTASKS_PER_NODE" \
+        --cpus-per-task="$SLURM_MBPT_GPU_CPUS" --time="$SLURM_MBPT_GPU_TIME" \
+        $SLURM_MBPT_GPU_GRES $SLURM_MBPT_GPU_EXTRA \
+        --partition="$SLURM_PARTITION_GPU" \
+        --output="$LOG_MBPT_GPU_FULL" \
+        "$BENCH_ROOT/templates/mbpt.sbatch")
+fi
+
 : "${AC_GPU:=$MBPT_GPU}"
 LOG_AC_GPU="$BENCH_SCRATCH/$GREEN_VER/$SYSTEM/ac_gpu/bench-ac-gpu-%j.out"
 mkdir -p "$(dirname "$LOG_AC_GPU")"
@@ -111,4 +130,4 @@ AC_JID=$(sbatch --parsable --export="$EXPORTS" \
     --output="$LOG_AC" \
     "$BENCH_ROOT/templates/ac.sbatch")
 
-echo "queued: init=$INIT_JID  mbpt=$MBPT_JID  mbpt_gpu=${MBPT_GPU_JID:-skipped}  ac=$AC_JID  ac_gpu=${AC_GPU_JID:-skipped}  (system=$SYSTEM ver=$GREEN_VER)"
+echo "queued: init=$INIT_JID  mbpt=$MBPT_JID  mbpt_gpu=${MBPT_GPU_JID:-skipped}  mbpt_gpu_full=${MBPT_GPU_FULL_JID:-skipped}  ac=$AC_JID  ac_gpu=${AC_GPU_JID:-skipped}  (system=$SYSTEM ver=$GREEN_VER)"

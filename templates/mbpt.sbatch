@@ -22,8 +22,16 @@ source "$BENCH_ROOT/tools/activate_env.sh"
 # dir and does not clobber the CPU results.
 MBPT_KERNEL="${MBPT_KERNEL:-CPU}"
 MBPT_SUBDIR="${MBPT_SUBDIR:-mbpt}"
+# cuda low-memory flags apply only to GPU runs; both move together via one
+# knob (default true). n2's full-memory diagnostic run sets it false.
+MBPT_CUDA_LOW_MEM="${MBPT_CUDA_LOW_MEM:-true}"
 KERNEL_FLAG=""
-[[ "$MBPT_KERNEL" != "CPU" ]] && KERNEL_FLAG="--kernel $MBPT_KERNEL"
+if [[ "$MBPT_KERNEL" != "CPU" ]]; then
+    KERNEL_FLAG="--kernel $MBPT_KERNEL"
+    if [[ "$MBPT_KERNEL" == GPU ]]; then
+        KERNEL_FLAG="$KERNEL_FLAG --cuda_low_gpu_memory $MBPT_CUDA_LOW_MEM --cuda_low_cpu_memory $MBPT_CUDA_LOW_MEM"
+    fi
+fi
 
 INPUT="$BENCH_SCRATCH/$GREEN_VER/$SYSTEM/init/input.h5"
 WORK="$BENCH_SCRATCH/$GREEN_VER/$SYSTEM/$MBPT_SUBDIR"
@@ -89,5 +97,6 @@ if [[ "${SKIP_AC:-0}" == 1 ]]; then
         --system   "$SYSTEM" \
         --manifest "$MANIFEST" \
         --work-dir "$BENCH_SCRATCH/$GREEN_VER/$SYSTEM" \
-        --kernel   "$([[ "$MBPT_KERNEL" == GPU ]] && echo gpu || echo cpu)"
+        --kernel   "$([[ "$MBPT_KERNEL" == GPU ]] && echo gpu || echo cpu)" \
+        ${MBPT_VARIANT:+--variant "$MBPT_VARIANT"}
 fi
