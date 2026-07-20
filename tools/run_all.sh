@@ -1,7 +1,7 @@
 #!/bin/bash
 # tools/run_all.sh — submit the whole benchmark matrix (systems × versions).
 #
-# Each systems/<sys>/submit.sh queues one init -> mbpt -> ac chain for a
+# tools/submit.sh queues one init -> mbpt -> ac chain for a single system at a
 # single GREEN_VER; this driver just loops the matrix and submits them all.
 #
 # Where things land:
@@ -48,7 +48,7 @@ fi
 for s in $SYSTEMS; do
   for v in $VERSIONS; do
     echo "=== submitting $s @ $v ==="
-    GREEN_VER="$v" bash "$BENCH_ROOT/systems/$s/submit.sh"
+    GREEN_VER="$v" bash "$BENCH_ROOT/tools/submit.sh" "$s"
   done
 done
 

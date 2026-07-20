@@ -22,11 +22,12 @@ tools/          collection, diff, manifest lint, version comparison
 RESULTS.md      generated comparison table (do not hand-edit)
 ```
 
-Each system has `manifest.yaml` (the run contract), `submit.sh` (chains
-the init → mbpt → ac SLURM jobs), and `results/` (one JSON summary per
-Green release). Heavy run outputs live in scratch (`$BENCH_SCRATCH`,
-e.g. `/pauli-storage`) — only the extracted JSON summaries are committed
-here.
+Each system has `manifest.yaml` (the run contract), `results/` (one JSON
+summary per Green release), and — only when it needs non-default SLURM
+resources — an `overrides.sh`. One driver, `tools/submit.sh <system>`,
+chains the init → mbpt → ac SLURM jobs for any system. Heavy run outputs
+live in scratch (`$BENCH_SCRATCH`, e.g. `/pauli-storage`) — only the
+extracted JSON summaries are committed here.
 
 ## Solid-state coverage
 

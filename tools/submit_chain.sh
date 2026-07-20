@@ -1,18 +1,16 @@
 #!/bin/bash
 # tools/submit_chain.sh — shared init -> mbpt -> ac SLURM submission chain.
 #
-# A system's submit.sh sets SYSTEM (and, optionally, per-system SLURM_*
-# resource overrides), then sources this file. Job resources default from
-# env.sh; override any of them by exporting the corresponding SLURM_{INIT,
-# MBPT,AC}_* variable before sourcing this script.
+# tools/submit.sh sets SYSTEM (and sources systems/<sys>/overrides.sh for any
+# per-system SLURM_* overrides), then sources this file. Job resources default
+# from env.sh; override any of them by exporting the corresponding
+# SLURM_{INIT,MBPT,AC}_* variable before this script runs.
 #
-# Usage (from systems/<sys>/submit.sh):
-#     export SYSTEM=<sys>
-#     # optional: export SLURM_MBPT_TIME=24:00:00   (etc.)
-#     source "$(dirname "${BASH_SOURCE[0]}")/../../tools/submit_chain.sh"
+# Not meant to be run directly — use `tools/submit.sh <system>` (or
+# tools/run_all.sh for the whole matrix).
 #
-# Required in env: GREEN_VER (e.g. v032, v100a0). BENCH_ROOT is derived from
-# this script's location if not already set.
+# Required in env: SYSTEM, GREEN_VER (e.g. v032, v100a0). BENCH_ROOT is derived
+# from this script's location if not already set.
 set -euo pipefail
 
 : "${SYSTEM:?SYSTEM must be set by the calling submit.sh}"
