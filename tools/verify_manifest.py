@@ -49,17 +49,27 @@ def verify(path: str, manifest: dict[str, Any]) -> list[str]:
     seen_methods: set[str] = set()
     for m in methods if isinstance(methods, list) else []:
         t = m.get("type")
+        name = m.get("name", t)
         _check(t in ALLOWED_METHOD,
                f"methods[].type must be one of {ALLOWED_METHOD}, got {t!r}", errs)
-        if t in seen_methods:
-            errs.append(f"duplicate methods[].type: {t}")
-        seen_methods.add(t)
+        # Uniqueness is per output name, not type: a GPU-only variant may reuse
+        # a type (e.g. two 'gw') as long as it carries a distinct 'name'.
+        if name in seen_methods:
+            errs.append(f"duplicate methods[].name: {name}")
+        seen_methods.add(name)
         _check(isinstance(m.get("itermax"), int) and m["itermax"] > 0,
-               f"methods[{t}].itermax must be a positive integer", errs)
+               f"methods[{name}].itermax must be a positive integer", errs)
         # threshold is required only for iterative methods
         if t == "gw":
             _check(isinstance(m.get("threshold"), float) and m["threshold"] > 0,
-                   "methods[gw].threshold must be a positive float", errs)
+                   f"methods[{name}].threshold must be a positive float", errs)
+        if "kernel" in m:
+            _check(m["kernel"] in {"cpu", "gpu"},
+                   f"methods[{name}].kernel must be 'cpu' or 'gpu'", errs)
+        for cf in ("cuda_low_gpu_memory", "cuda_low_cpu_memory"):
+            if cf in m:
+                _check(isinstance(m[cf], bool),
+                       f"methods[{name}].{cf} must be a boolean", errs)
 
     return errs
 

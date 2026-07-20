@@ -38,9 +38,22 @@ export HDF5_USE_FILE_LOCKING=FALSE
 # so whitespace inside a value can't poison the others).
 _yaml="import yaml,sys; m=yaml.safe_load(open('$MANIFEST'));"
 KIND=$(python -c "$_yaml print(m['system']['kind'])")
-METHODS=$(python -c "$_yaml print(' '.join(x['type'].upper() for x in m['methods']))")
 GRID_FILE=$(python -c "$_yaml print(m.get('mesh',{}).get('grid_file','ir/1e4.h5'))")
 BETA=$(python -c "$_yaml print(m.get('mesh',{}).get('beta',100))")
+
+# Per-method plan for THIS kernel, from the shared planner (so it matches what
+# extract_results later reports). Tab-separated: name / scf_type / itermax /
+# cuda_low_gpu_memory / cuda_low_cpu_memory. A GPU-only method (n2's full-memory
+# gw_fullmem) appears only when MBPT_KERNEL=GPU.
+KERNEL_LC=$([[ "$MBPT_KERNEL" == GPU ]] && echo gpu || echo cpu)
+METHOD_TABLE=$(python -c "
+import sys; sys.path.insert(0, '$BENCH_ROOT/tools')
+from _lib import load_manifest, methods_for_kernel
+for x in methods_for_kernel(load_manifest('$MANIFEST'), '$KERNEL_LC'):
+    print('\t'.join([x['name'], x['type'], str(x['itermax']),
+                     str(x['cuda_low_gpu_memory']).lower(),
+                     str(x['cuda_low_cpu_memory']).lower()]))
+")
 
 # Inputs are the init phase outputs (absolute paths so $WORK can move).
 # Solids produce separate Coulomb / HF-exchange integral dirs; molecular
@@ -53,18 +66,22 @@ else
     DF_INT="$DF_HF_INT"
 fi
 
-for scf_type in $METHODS; do
-    echo "=== mbpt $GREEN_VER on $SYSTEM :: $scf_type ==="
-    OUT="$WORK/out_${scf_type,,}.h5"
-    # itermax from the manifest's per-method spec; mbpt.exe defaults to 1,
-    # which silently under-converges GW.
-    ITERMAX=$(python -c "$_yaml print(next((x.get('itermax',1) for x in m['methods'] if x['type'].upper()=='$scf_type'),1))")
+# One srun per method. NAME is the output/report key (out_<name>.h5); a
+# variant reuses an scf_type under a distinct name (e.g. gw_fullmem -> gw).
+while IFS=$'\t' read -r NAME SCF_TYPE ITERMAX CUDA_GPU CUDA_CPU; do
+    [[ -z "$NAME" ]] && continue
+    echo "=== mbpt $GREEN_VER on $SYSTEM :: $NAME ==="
+    OUT="$WORK/out_${NAME,,}.h5"
+    # cuda low-memory flags apply only to GPU runs (both from the manifest
+    # method; default true). n2's gw_fullmem sets them false.
+    CUDA_FLAGS=""
+    [[ "$MBPT_KERNEL" == GPU ]] && CUDA_FLAGS="--cuda_low_gpu_memory $CUDA_GPU --cuda_low_cpu_memory $CUDA_CPU"
     # Binary lives at $GREEN_ROOT/bin/mbpt.exe (on PATH via activate_env.sh).
     # Full self-energy mixing (alpha=1.0 => take the full new sigma each
     # iteration, no damping). Other params (diis, threshold, …) take defaults.
     srun mbpt.exe \
         --verbose          4 \
-        --scf_type         "$scf_type" \
+        --scf_type         "${SCF_TYPE^^}" \
         --itermax          "$ITERMAX" \
         --mixing_type      SIGMA_MIXING \
         --mixing_alpha     1.0 \
@@ -75,8 +92,8 @@ for scf_type in $METHODS; do
         --BETA             "$BETA" \
         --results_file     "$OUT" \
         --restart          false \
-        $KERNEL_FLAG
-done
+        $KERNEL_FLAG $CUDA_FLAGS
+done <<< "$METHOD_TABLE"
 
 # When analytic continuation is skipped for this system (SKIP_AC=1, set in
 # the system's submit.sh), ac.sbatch — which normally calls
