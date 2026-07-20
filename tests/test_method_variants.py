@@ -1,6 +1,6 @@
 """Method-level GPU variants: cuda low-memory flags live on the manifest
 method, and a GPU-only method (n2's full-memory GW) is just another method
-in the same run — no separate subdir/job."""
+in the same run — no separate subdir/job. Its output_tag names its out file."""
 import sys
 from pathlib import Path
 
@@ -13,28 +13,28 @@ REPO = Path(__file__).resolve().parents[1]
 _METHODS = [
     {"type": "hf", "itermax": 1},
     {"type": "gw", "itermax": 30, "threshold": 1e-7},
-    {"type": "gw", "name": "gw_fullmem", "kernel": "gpu", "itermax": 30,
+    {"type": "gw", "output_tag": "gw_fullmem", "kernel": "gpu", "itermax": 30,
      "threshold": 1e-7, "cuda_low_gpu_memory": False, "cuda_low_cpu_memory": False},
 ]
 _MANIFEST = {"methods": _METHODS}
 
 
 def test_cpu_excludes_gpu_only_method():
-    assert [x["name"] for x in methods_for_kernel(_MANIFEST, "cpu")] == ["hf", "gw"]
+    assert [x["output_tag"] for x in methods_for_kernel(_MANIFEST, "cpu")] == ["hf", "gw"]
 
 
 def test_gpu_includes_gpu_only_method():
     plan = methods_for_kernel(_MANIFEST, "gpu")
-    assert [x["name"] for x in plan] == ["hf", "gw", "gw_fullmem"]
+    assert [x["output_tag"] for x in plan] == ["hf", "gw", "gw_fullmem"]
     full = plan[-1]
     assert full["type"] == "gw"
     assert full["cuda_low_gpu_memory"] is False
     assert full["cuda_low_cpu_memory"] is False
 
 
-def test_cuda_defaults_true_and_name_defaults_to_type():
+def test_cuda_defaults_true_and_output_tag_defaults_to_type():
     gw = methods_for_kernel(_MANIFEST, "gpu")[1]
-    assert gw["name"] == "gw"
+    assert gw["output_tag"] == "gw"
     assert gw["cuda_low_gpu_memory"] is True
     assert gw["cuda_low_cpu_memory"] is True
 

@@ -37,5 +37,5 @@ methods:
   # GPU-only cross-check: the same GW with the cuda low-memory path OFF, to
   # verify it matches the default (low-memory) GPU run. Runs only on GPU and
   # lands as method 'gw_fullmem' alongside 'gw' in the _gpu result JSON.
-  - { type: gw, name: gw_fullmem, kernel: gpu, itermax: 30, threshold: 1.0e-7,
+  - { type: gw, output_tag: gw_fullmem, kernel: gpu, itermax: 30, threshold: 1.0e-7,
       cuda_low_gpu_memory: false, cuda_low_cpu_memory: false }

@@ -296,8 +296,8 @@ def main() -> int:
     # Only the methods that ran on this kernel (a GPU-only variant like n2's
     # 'gw_fullmem' is absent from the CPU results), keyed by output name.
     methods = {
-        x["name"].lower(): _method_result(x["name"].lower(), x["type"].lower(),
-                                           args.work_dir, kind, sections, args.kernel)
+        x["output_tag"].lower(): _method_result(x["output_tag"].lower(), x["type"].lower(),
+                                                 args.work_dir, kind, sections, args.kernel)
         for x in methods_for_kernel(manifest, args.kernel)
     }
 

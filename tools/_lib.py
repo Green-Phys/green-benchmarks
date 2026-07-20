@@ -145,8 +145,9 @@ def methods_for_kernel(manifest: dict[str, Any], kernel: str) -> list[dict[str, 
     just another method rather than a separate job/subdir.
 
     Each returned dict has the resolved:
-      name  — output/report key (defaults to type; must be unique per manifest)
-      type  — mbpt.exe --scf_type (hf/gf2/gw)
+      output_tag — names the output file (out_<tag>.h5) and the report key;
+                   defaults to type; must be unique within a manifest
+      type       — mbpt.exe --scf_type (hf/gf2/gw)
       itermax
       cuda_low_gpu_memory / cuda_low_cpu_memory — bool, default True; passed to
         mbpt.exe only on GPU runs (both default true per the GPU convention).
@@ -157,7 +158,7 @@ def methods_for_kernel(manifest: dict[str, Any], kernel: str) -> list[dict[str, 
         if mk and mk.lower() != kernel:
             continue
         plan.append({
-            "name": str(x.get("name", x["type"])),
+            "output_tag": str(x.get("output_tag", x["type"])),
             "type": x["type"],
             "itermax": x.get("itermax", 1),
             "cuda_low_gpu_memory": bool(x.get("cuda_low_gpu_memory", True)),

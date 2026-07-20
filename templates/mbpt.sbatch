@@ -42,15 +42,15 @@ GRID_FILE=$(python -c "$_yaml print(m.get('mesh',{}).get('grid_file','ir/1e4.h5'
 BETA=$(python -c "$_yaml print(m.get('mesh',{}).get('beta',100))")
 
 # Per-method plan for THIS kernel, from the shared planner (so it matches what
-# extract_results later reports). Tab-separated: name / scf_type / itermax /
-# cuda_low_gpu_memory / cuda_low_cpu_memory. A GPU-only method (n2's full-memory
-# gw_fullmem) appears only when MBPT_KERNEL=GPU.
+# extract_results later reports). Tab-separated: output_tag / scf_type / itermax
+# / cuda_low_gpu_memory / cuda_low_cpu_memory. A GPU-only method (n2's
+# full-memory gw_fullmem) appears only when MBPT_KERNEL=GPU.
 KERNEL_LC=$([[ "$MBPT_KERNEL" == GPU ]] && echo gpu || echo cpu)
 METHOD_TABLE=$(python -c "
 import sys; sys.path.insert(0, '$BENCH_ROOT/tools')
 from _lib import load_manifest, methods_for_kernel
 for x in methods_for_kernel(load_manifest('$MANIFEST'), '$KERNEL_LC'):
-    print('\t'.join([x['name'], x['type'], str(x['itermax']),
+    print('\t'.join([x['output_tag'], x['type'], str(x['itermax']),
                      str(x['cuda_low_gpu_memory']).lower(),
                      str(x['cuda_low_cpu_memory']).lower()]))
 ")
@@ -66,12 +66,12 @@ else
     DF_INT="$DF_HF_INT"
 fi
 
-# One srun per method. NAME is the output/report key (out_<name>.h5); a
-# variant reuses an scf_type under a distinct name (e.g. gw_fullmem -> gw).
-while IFS=$'\t' read -r NAME SCF_TYPE ITERMAX CUDA_GPU CUDA_CPU; do
-    [[ -z "$NAME" ]] && continue
-    echo "=== mbpt $GREEN_VER on $SYSTEM :: $NAME ==="
-    OUT="$WORK/out_${NAME,,}.h5"
+# One srun per method. OUTPUT_TAG names the output (out_<tag>.h5) and report
+# key; a variant reuses an scf_type under a distinct tag (e.g. gw_fullmem -> gw).
+while IFS=$'\t' read -r OUTPUT_TAG SCF_TYPE ITERMAX CUDA_GPU CUDA_CPU; do
+    [[ -z "$OUTPUT_TAG" ]] && continue
+    echo "=== mbpt $GREEN_VER on $SYSTEM :: $OUTPUT_TAG ==="
+    OUT="$WORK/out_${OUTPUT_TAG,,}.h5"
     # cuda low-memory flags apply only to GPU runs (both from the manifest
     # method; default true). n2's gw_fullmem sets them false.
     CUDA_FLAGS=""
