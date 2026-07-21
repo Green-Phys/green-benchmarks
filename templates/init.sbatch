@@ -41,7 +41,7 @@ if [[ "$GREEN_VER" == *_patched ]]; then
             exit 2; }
     done
     echo "=== patched init for $SYSTEM: $BASE_VER grid + $HF_VER Fock ==="
-    python "$BENCH_ROOT/tools/patch_input.py" \
+    python "$BENCH_ROOT/tools/diagnostics/patch_input.py" \
         --base    "$BASE_DIR/input.h5" \
         --hf-from "$HF_DIR/input.h5" \
         --out     "$WORK/input.h5"

@@ -73,7 +73,7 @@ green-benchmarks/
 │   └── alpha_sn/                # same shape
 ├── tools/
 │   ├── collect.py               # aggregate results/*.json into RESULTS.md
-│   ├── diff.py                  # compare two release versions
+│   ├── compare_versions.py      # compare two releases (tables + draft note)
 │   └── verify_manifest.py       # CI lint for manifest schema
 └── RESULTS.md                   # generated comparison table, NOT in README
 ```
@@ -151,7 +151,8 @@ artificial common subset.
   0.4.0`) gets one `results/<version>.json` per system.
 - `tools/collect.py` walks `systems/*/results/*.json` and writes
   `RESULTS.md` with a table per observable across versions.
-- `tools/diff.py <v_old> <v_new>` highlights deltas — useful as a
+- `tools/compare_versions.py --old <v_old> --new <v_new>` highlights
+  deltas (value + timing tables, flagged past tolerance) — useful as a
   pre-release sanity check.
 - When a new observable is added (e.g., a method that didn't exist
   in older versions), older `results/*.json` simply lack that key.

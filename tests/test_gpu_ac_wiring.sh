@@ -12,5 +12,10 @@ grep -q 'MBPT_SUBDIR_FOR_AC=mbpt_gpu' tools/submit_chain.sh || { echo "gpu-sourc
 # SLURM_MBPT_GPU_GRES="--gres=gpu:N".
 grep -q 'SLURM_MBPT_GPU_GRES' tools/submit_chain.sh || { echo "GPU job gres not configurable via SLURM_MBPT_GPU_GRES"; fail=1; }
 grep -q 'gpus-per-node' tools/submit_chain.sh && { echo "GPU job still hardwires --gpus-per-node gres"; fail=1; }
-bash -n templates/ac.sbatch && bash -n tools/submit_chain.sh || { echo "syntax"; fail=1; }
+# GPU runs pass the cuda low-memory flags, driven per-method from the manifest
+# via the shared planner (no separate subdir/job for the full-memory variant):
+grep -q 'cuda_low_gpu_memory' templates/mbpt.sbatch || { echo "mbpt.sbatch missing --cuda_low_gpu_memory"; fail=1; }
+grep -q 'cuda_low_cpu_memory' templates/mbpt.sbatch || { echo "mbpt.sbatch missing --cuda_low_cpu_memory"; fail=1; }
+grep -q 'methods_for_kernel' templates/mbpt.sbatch || { echo "mbpt.sbatch not using shared method planner"; fail=1; }
+bash -n templates/ac.sbatch && bash -n tools/submit_chain.sh && bash -n templates/mbpt.sbatch || { echo "syntax"; fail=1; }
 [[ $fail == 0 ]] && echo "gpu-ac OK" || exit 1

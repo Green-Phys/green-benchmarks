@@ -26,7 +26,7 @@ import sys
 import time
 from pathlib import Path
 
-from _lib import load_manifest, write_result
+from _lib import load_manifest, write_result, methods_for_kernel
 
 
 def _mbpt_version() -> str:
@@ -232,10 +232,15 @@ def _spectral_observables(work_dir: Path, kind: str,
     return out
 
 
-def _method_result(name: str, work_dir: Path, kind: str,
+def _method_result(name: str, scf_type: str, work_dir: Path, kind: str,
                    sections: dict[str, str], kernel: str = "cpu") -> dict:
     """Build one method's {name, energies, final_iter, timings, spectral?}
     block (schema 3).
+
+    name is the output/report key (out_<name>.h5, log section); scf_type is the
+    underlying hf/gf2/gw used for the solver-timing event, so a variant like
+    'gw_fullmem' still gets its GW timing. Spectral attaches only to the method
+    literally named 'gw' — the one the AC job continues (out_gw.h5).
 
     timings (from the mbpt log section): 'hf' = the Hartree-Fock build,
     'total' = the method's solver (GF2/GW). Each line reports per-rank
@@ -252,7 +257,7 @@ def _method_result(name: str, work_dir: Path, kind: str,
     hf_t = _event_avg_all(sections.get(name, ""), "Hartree-Fock")
     if hf_t:
         block["timings"]["hf"] = hf_t[0]          # first iteration only
-    ev = _SOLVER_EVENT.get(name)
+    ev = _SOLVER_EVENT.get(scf_type)
     if ev:
         tot = _event_avg_all(sections.get(name, ""), ev)
         if tot:
@@ -288,9 +293,12 @@ def main() -> int:
     log = _mbpt_log(args.work_dir, args.kernel)
     sections = _method_sections(log.read_text(errors="replace")) if log else {}
 
+    # Only the methods that ran on this kernel (a GPU-only variant like n2's
+    # 'gw_fullmem' is absent from the CPU results), keyed by output name.
     methods = {
-        m: _method_result(m, args.work_dir, kind, sections, args.kernel)
-        for m in (x["type"].lower() for x in manifest["methods"])
+        x["output_tag"].lower(): _method_result(x["output_tag"].lower(), x["type"].lower(),
+                                                 args.work_dir, kind, sections, args.kernel)
+        for x in methods_for_kernel(manifest, args.kernel)
     }
 
     out_path = write_result(

@@ -1,0 +1,7 @@
+# Per-system SLURM overrides for ge_sfx2c1e (sourced by tools/submit.sh).
+export SLURM_INIT_TIME=12:00:00
+export SLURM_MBPT_NODES=2
+export SLURM_MBPT_NTASKS_PER_NODE=48
+export SLURM_MBPT_TIME=24:00:00
+export SLURM_AC_NTASKS_PER_NODE=32
+export SLURM_AC_TIME=12:00:00

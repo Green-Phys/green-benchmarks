@@ -79,12 +79,12 @@ The contract block at the top of each file lists which env vars are
 set when it runs, which input files exist, and which output files
 it must produce. Do not break those contracts.
 
-Per-system `submit.sh` (under `systems/<sys>/`) chains the three
-templates with `sbatch --dependency=afterok` and supplies per-system
-resource flags (nodes / ntasks-per-node / time). Each system's
-resource numbers were derived from `manifest.yaml#resources` plus
-heuristics for the init and ac phases — adjust in the `submit.sh`
-when you have real wallclock data.
+One driver, `tools/submit.sh <system>`, chains the three templates with
+`sbatch --dependency=afterok`. Resources default per-phase from `env.sh`;
+a system that needs different ones drops an `overrides.sh` in its dir
+(sourced automatically) exporting the relevant `SLURM_*` vars — only 5
+systems do (ge×2, h_chain, n2, si). Adjust those when you have real
+wallclock data; systems with no `overrides.sh` just take the defaults.
 
 ---
 
@@ -162,8 +162,10 @@ git push
    `init.sbatch` (via `tools/render_init_args.py` → Green's
    `init_data_(mol_)df.py`). If the manifest needs a new field, teach
    `render_init_args.py` to map it — there is no per-system generator.
-4. Copy an existing `submit.sh` (closest workload size), adjust the
-   `SYSTEM` name and the per-phase sbatch resource flags.
+4. Nothing else is needed to submit it — `tools/submit.sh <system>` works
+   for any system. Only if it needs non-default resources, add a
+   `systems/<system>/overrides.sh` exporting the relevant `SLURM_*` vars
+   (copy one from a comparable system).
 5. Add a row to the README's system table.
 
 The four-systems pattern in this repo deliberately spans the
@@ -186,9 +188,9 @@ existing four do not.
   benchmark run, and wait for triage. To localize init (mean-field
   Fock) vs solver as the cause, run the **patched diagnostic** after the
   v032 and v100a0 runs:
-  `GREEN_VER=v032_patched bash systems/<sys>/submit.sh`. It reuses v032's
+  `GREEN_VER=v032_patched bash tools/submit.sh <sys>`. It reuses v032's
   grid/integrals/solver but swaps in v100a0's HF Fock/S/H
-  (`tools/patch_input.py`); if the result (`0.3.2-patched_0.3.0.json`)
+  (`tools/diagnostics/patch_input.py`); if the result (`0.3.2-patched_0.3.0.json`)
   matches the v100a0 run, the init Fock was the cause, not the solver.
 - **HPC allocation lost**: out of scope for this repo. The suite stops
   running. This is the known bus factor.

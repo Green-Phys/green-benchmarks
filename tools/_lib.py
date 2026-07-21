@@ -133,3 +133,35 @@ def flatten_result(result: dict) -> tuple[dict[str, float], dict[str, float]]:
 
 def iter_systems() -> list[pathlib.Path]:
     return sorted((REPO_ROOT / "systems").glob("*/manifest.yaml"))
+
+
+def methods_for_kernel(manifest: dict[str, Any], kernel: str) -> list[dict[str, Any]]:
+    """Manifest method entries applicable to `kernel` ("cpu" | "gpu"), normalized.
+
+    Shared source of truth for templates/mbpt.sbatch (which methods to RUN)
+    and tools/extract_results.py (which to REPORT). A method with
+    `kernel: cpu|gpu` runs only on that kernel; absent means both. This lets a
+    GPU-only variant (e.g. n2's full-memory GW, cuda low-memory OFF) live as
+    just another method rather than a separate job/subdir.
+
+    Each returned dict has the resolved:
+      output_tag — names the output file (out_<tag>.h5) and the report key;
+                   defaults to type; must be unique within a manifest
+      type       — mbpt.exe --scf_type (hf/gf2/gw)
+      itermax
+      cuda_low_gpu_memory / cuda_low_cpu_memory — bool, default True; passed to
+        mbpt.exe only on GPU runs (both default true per the GPU convention).
+    """
+    plan: list[dict[str, Any]] = []
+    for x in manifest.get("methods", []):
+        mk = x.get("kernel")
+        if mk and mk.lower() != kernel:
+            continue
+        plan.append({
+            "output_tag": str(x.get("output_tag", x["type"])),
+            "type": x["type"],
+            "itermax": x.get("itermax", 1),
+            "cuda_low_gpu_memory": bool(x.get("cuda_low_gpu_memory", True)),
+            "cuda_low_cpu_memory": bool(x.get("cuda_low_cpu_memory", True)),
+        })
+    return plan
