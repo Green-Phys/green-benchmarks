@@ -68,6 +68,9 @@ fi
 
 # One srun per method. OUTPUT_TAG names the output (out_<tag>.h5) and report
 # key; a variant reuses an scf_type under a distinct tag (e.g. gw_fullmem -> gw).
+# The method table is fed to the loop on stdin (via `done <<<`), and srun reads
+# stdin — so without `srun ... </dev/null` below, the first method's srun would
+# swallow the remaining rows and only that method would run.
 while IFS=$'\t' read -r OUTPUT_TAG SCF_TYPE ITERMAX CUDA_GPU CUDA_CPU; do
     [[ -z "$OUTPUT_TAG" ]] && continue
     echo "=== mbpt $GREEN_VER on $SYSTEM :: $OUTPUT_TAG ==="
@@ -92,7 +95,7 @@ while IFS=$'\t' read -r OUTPUT_TAG SCF_TYPE ITERMAX CUDA_GPU CUDA_CPU; do
         --BETA             "$BETA" \
         --results_file     "$OUT" \
         --restart          false \
-        $KERNEL_FLAG $CUDA_FLAGS
+        $KERNEL_FLAG $CUDA_FLAGS </dev/null
 done <<< "$METHOD_TABLE"
 
 # When analytic continuation is skipped for this system (SKIP_AC=1, set in
