@@ -17,5 +17,10 @@ grep -q 'gpus-per-node' tools/submit_chain.sh && { echo "GPU job still hardwires
 grep -q 'cuda_low_gpu_memory' templates/mbpt.sbatch || { echo "mbpt.sbatch missing --cuda_low_gpu_memory"; fail=1; }
 grep -q 'cuda_low_cpu_memory' templates/mbpt.sbatch || { echo "mbpt.sbatch missing --cuda_low_cpu_memory"; fail=1; }
 grep -q 'methods_for_kernel' templates/mbpt.sbatch || { echo "mbpt.sbatch not using shared method planner"; fail=1; }
+# GPU MBPT job is gated on the manifest having a gpu_methods plan:
+grep -q 'has_gpu_methods' tools/submit_chain.sh || { echo "GPU job not gated on gpu_methods"; fail=1; }
+grep -q 'HAS_GPU_METHODS' tools/submit_chain.sh || { echo "submit_chain missing gpu_methods gate var"; fail=1; }
+# gpu-source AC depends on the GPU MBPT job actually being submitted (non-empty JID):
+grep -q 'n "\$MBPT_GPU_JID"' tools/submit_chain.sh || { echo "ac_gpu not gated on GPU MBPT job presence"; fail=1; }
 bash -n templates/ac.sbatch && bash -n tools/submit_chain.sh && bash -n templates/mbpt.sbatch || { echo "syntax"; fail=1; }
 [[ $fail == 0 ]] && echo "gpu-ac OK" || exit 1

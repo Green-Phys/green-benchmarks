@@ -64,9 +64,11 @@ MBPT_JID=$(sbatch --parsable --export="$EXPORTS" \
 
 # MBPT on GPU (mbpt.exe --kernel GPU) — extra MBPT-only job on the GPU
 # partition, depends on the same init, writes to a separate mbpt_gpu/ dir.
-# Skipped when MBPT_GPU=0.
+# Fires only when GPU is enabled cluster-wide (MBPT_GPU!=0) AND this system
+# defines a gpu_methods: plan; otherwise there's nothing to run on GPU.
+HAS_GPU_METHODS=$(python -c "import sys; sys.path.insert(0,'$BENCH_ROOT/tools'); from _lib import load_manifest, has_gpu_methods; print(1 if has_gpu_methods(load_manifest('$MANIFEST')) else 0)")
 MBPT_GPU_JID=""
-if [[ "$MBPT_GPU" != 0 ]]; then
+if [[ "$MBPT_GPU" != 0 && "$HAS_GPU_METHODS" == 1 ]]; then
     # $SLURM_MBPT_GPU_GRES / $SLURM_MBPT_GPU_EXTRA are intentionally unquoted so
     # an empty value expands to nothing. On pauli the GPU nodes carry no gpu
     # gres, so GRES is empty and the job takes the whole node via --exclusive;
@@ -87,9 +89,11 @@ fi
 LOG_AC_GPU="$BENCH_SCRATCH/$GREEN_VER/$SYSTEM/ac_gpu/bench-ac-gpu-%j.out"
 mkdir -p "$(dirname "$LOG_AC_GPU")"
 AC_GPU_JID=""
-if [[ "$MBPT_GPU" != 0 && "$AC_GPU" != 0 ]]; then
-    # Identical to the CPU AC job (same ac.exe, same SLURM_AC_* resources, same
-    # AUX partition) — only the source mbpt dir and the output dir differ.
+if [[ -n "$MBPT_GPU_JID" && "$AC_GPU" != 0 ]]; then
+    # Runs only if the GPU MBPT job was submitted (i.e. this system has a
+    # gpu_methods plan). Identical to the CPU AC job (same ac.exe, same
+    # SLURM_AC_* resources, same AUX partition) — only the source mbpt dir and
+    # the output dir differ.
     AC_GPU_JID=$(sbatch --parsable \
         --export="$EXPORTS,AC_SUBDIR=ac_gpu,MBPT_SUBDIR_FOR_AC=mbpt_gpu" \
         --dependency=afterok:$MBPT_GPU_JID \

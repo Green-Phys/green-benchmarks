@@ -135,28 +135,31 @@ def iter_systems() -> list[pathlib.Path]:
     return sorted((REPO_ROOT / "systems").glob("*/manifest.yaml"))
 
 
-def methods_for_kernel(manifest: dict[str, Any], kernel: str) -> list[dict[str, Any]]:
-    """Manifest method entries applicable to `kernel` ("cpu" | "gpu"), normalized.
+def _methods_section(kernel: str) -> str:
+    """The manifest key holding the plan for `kernel`: `methods` (cpu) or the
+    parallel, self-contained `gpu_methods` (gpu)."""
+    return "gpu_methods" if kernel == "gpu" else "methods"
 
-    Shared source of truth for templates/mbpt.sbatch (which methods to RUN)
-    and tools/extract_results.py (which to REPORT). A method with
-    `kernel: cpu|gpu` runs only on that kernel; absent means both. This lets a
-    GPU-only variant (e.g. n2's full-memory GW, cuda low-memory OFF) live as
-    just another method rather than a separate job/subdir.
+
+def methods_for_kernel(manifest: dict[str, Any], kernel: str) -> list[dict[str, Any]]:
+    """Normalized method plan for `kernel` ("cpu" | "gpu").
+
+    CPU reads the `methods:` list; GPU reads the parallel `gpu_methods:` list
+    (each fully self-contained — its own itermax/threshold/cuda flags, a smaller
+    plan such as 1xHF + 2xGW). A system with no `gpu_methods:` has an empty GPU
+    plan (see has_gpu_methods). Shared source of truth for templates/mbpt.sbatch
+    (which methods to RUN) and tools/extract_results.py (which to REPORT).
 
     Each returned dict has the resolved:
       output_tag — names the output file (out_<tag>.h5) and the report key;
-                   defaults to type; must be unique within a manifest
+                   defaults to type; must be unique within its section
       type       — mbpt.exe --scf_type (hf/gf2/gw)
       itermax
       cuda_low_gpu_memory / cuda_low_cpu_memory — bool, default True; passed to
         mbpt.exe only on GPU runs (both default true per the GPU convention).
     """
     plan: list[dict[str, Any]] = []
-    for x in manifest.get("methods", []):
-        mk = x.get("kernel")
-        if mk and mk.lower() != kernel:
-            continue
+    for x in manifest.get(_methods_section(kernel), []):
         plan.append({
             "output_tag": str(x.get("output_tag", x["type"])),
             "type": x["type"],
@@ -165,3 +168,9 @@ def methods_for_kernel(manifest: dict[str, Any], kernel: str) -> list[dict[str, 
             "cuda_low_cpu_memory": bool(x.get("cuda_low_cpu_memory", True)),
         })
     return plan
+
+
+def has_gpu_methods(manifest: dict[str, Any]) -> bool:
+    """True if the manifest defines a non-empty `gpu_methods:` plan. The GPU
+    MBPT job is submitted only for such systems (gated in submit_chain.sh)."""
+    return bool(manifest.get("gpu_methods"))

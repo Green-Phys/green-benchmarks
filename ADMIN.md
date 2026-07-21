@@ -157,7 +157,12 @@ git push
 
 1. `mkdir -p systems/<new>/results`
 2. Write `systems/<new>/manifest.yaml`. Run
-   `python tools/verify_manifest.py systems/<new>/manifest.yaml`.
+   `python tools/verify_manifest.py systems/<new>/manifest.yaml`. The
+   `methods:` list is the CPU plan. To also run the system on GPU, add a
+   parallel `gpu_methods:` list — each entry self-contained (its own
+   `itermax`/`threshold`/`cuda_low_*_memory`); it's typically a small
+   consistency check (e.g. `hf` ×1 + `gw` ×2), not a converged run. Without a
+   `gpu_methods:` block the system gets no GPU job.
 3. Inputs are generated from the manifest automatically by
    `init.sbatch` (via `tools/render_init_args.py` → Green's
    `init_data_(mol_)df.py`). If the manifest needs a new field, teach

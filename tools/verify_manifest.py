@@ -43,35 +43,45 @@ def verify(path: str, manifest: dict[str, Any]) -> list[str]:
         _check("lattice" in sys_["geometry"],
                "geometry.lattice required for solid systems", errs)
 
-    methods = manifest["methods"]
-    _check(isinstance(methods, list) and len(methods) >= 1,
-           "methods must be a non-empty list", errs)
-    seen_methods: set[str] = set()
+    _verify_methods(manifest.get("methods"), "methods", required=True, errs=errs)
+    # gpu_methods is the parallel GPU plan; optional (systems without it just
+    # don't get a GPU job). Same per-entry rules as methods.
+    if "gpu_methods" in manifest:
+        _verify_methods(manifest["gpu_methods"], "gpu_methods", required=False, errs=errs)
+
+    return errs
+
+
+def _verify_methods(methods, section: str, *, required: bool, errs: list[str]) -> None:
+    """Validate one method-plan list (`methods` or `gpu_methods`). output_tag
+    uniqueness is per-section — the two plans write to separate files, so a CPU
+    'gw' and a GPU 'gw' never collide."""
+    if required:
+        _check(isinstance(methods, list) and len(methods) >= 1,
+               f"{section} must be a non-empty list", errs)
+    else:
+        _check(isinstance(methods, list) and len(methods) >= 1,
+               f"{section}, if present, must be a non-empty list", errs)
+    seen: set[str] = set()
     for m in methods if isinstance(methods, list) else []:
         t = m.get("type")
         tag = m.get("output_tag", t)
         _check(t in ALLOWED_METHOD,
-               f"methods[].type must be one of {ALLOWED_METHOD}, got {t!r}", errs)
-        # Uniqueness is per output_tag, not type: a GPU-only variant may reuse a
-        # type (e.g. two 'gw') as long as it carries a distinct output_tag.
-        if tag in seen_methods:
-            errs.append(f"duplicate methods[].output_tag: {tag}")
-        seen_methods.add(tag)
+               f"{section}[].type must be one of {ALLOWED_METHOD}, got {t!r}", errs)
+        # A variant may reuse a type (e.g. two 'gw') under a distinct output_tag.
+        if tag in seen:
+            errs.append(f"duplicate {section}[].output_tag: {tag}")
+        seen.add(tag)
         _check(isinstance(m.get("itermax"), int) and m["itermax"] > 0,
-               f"methods[{tag}].itermax must be a positive integer", errs)
+               f"{section}[{tag}].itermax must be a positive integer", errs)
         # threshold is required only for iterative methods
         if t == "gw":
             _check(isinstance(m.get("threshold"), float) and m["threshold"] > 0,
-                   f"methods[{tag}].threshold must be a positive float", errs)
-        if "kernel" in m:
-            _check(m["kernel"] in {"cpu", "gpu"},
-                   f"methods[{tag}].kernel must be 'cpu' or 'gpu'", errs)
+                   f"{section}[{tag}].threshold must be a positive float", errs)
         for cf in ("cuda_low_gpu_memory", "cuda_low_cpu_memory"):
             if cf in m:
                 _check(isinstance(m[cf], bool),
-                       f"methods[{tag}].{cf} must be a boolean", errs)
-
-    return errs
+                       f"{section}[{tag}].{cf} must be a boolean", errs)
 
 
 def main() -> int:
