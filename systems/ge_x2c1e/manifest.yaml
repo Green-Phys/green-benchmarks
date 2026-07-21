@@ -46,3 +46,8 @@ methods:
   # spectral observables (vbm/cbm/gaps).
   - { type: hf, itermax: 2 }
   - { type: gw, itermax: 20, threshold: 1.0e-9 }
+
+gpu_methods:
+  # GPU kernel-consistency check: hf x1 + gw x2, not a converged run.
+  - { type: hf, itermax: 1 }
+  - { type: gw, itermax: 2, threshold: 1.0e-9 }

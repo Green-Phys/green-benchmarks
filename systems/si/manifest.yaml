@@ -36,3 +36,8 @@ methods:
   - { type: hf,  itermax: 1 }
   - { type: gf2, itermax: 1 }
   - { type: gw,  itermax: 30, threshold: 1.0e-7 }
+
+gpu_methods:
+  # GPU kernel-consistency check: hf x1 + gw x2 (drop gf2), not a converged run.
+  - { type: hf, itermax: 1 }
+  - { type: gw, itermax: 2, threshold: 1.0e-7 }
