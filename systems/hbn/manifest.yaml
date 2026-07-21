@@ -34,3 +34,7 @@ mesh:
 
 methods:
   - { type: gw, itermax: 30, threshold: 1.0e-7 }
+
+gpu_methods:
+  # GPU kernel-consistency check: gw x2 (gw-only solid), not a converged run.
+  - { type: gw, itermax: 2, threshold: 1.0e-7 }
