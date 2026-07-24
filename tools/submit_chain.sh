@@ -46,6 +46,7 @@ mkdir -p "$(dirname "$LOG_INIT")" "$(dirname "$LOG_MBPT")" \
 
 # INIT — always single node / single task (multi-threaded via cpus-per-task).
 INIT_JID=$(sbatch --parsable --export="$EXPORTS" \
+    --job-name="${GREEN_VER}-${SYSTEM}-init" \
     --nodes=1 --ntasks-per-node=1 \
     --cpus-per-task="$SLURM_INIT_CPUS" --time="$SLURM_INIT_TIME" \
     --partition="$SLURM_PARTITION_AUX" \
@@ -55,6 +56,7 @@ INIT_JID=$(sbatch --parsable --export="$EXPORTS" \
 # MBPT — the heavy MPI job. $SLURM_MBPT_EXTRA is intentionally unquoted so an
 # empty value expands to nothing and e.g. "--exclusive" expands to a flag.
 MBPT_JID=$(sbatch --parsable --export="$EXPORTS" \
+    --job-name="${GREEN_VER}-${SYSTEM}-mbpt" \
     --dependency=afterok:$INIT_JID \
     --nodes="$SLURM_MBPT_NODES" --ntasks-per-node="$SLURM_MBPT_NTASKS_PER_NODE" \
     --cpus-per-task="$SLURM_MBPT_CPUS" --time="$SLURM_MBPT_TIME" $SLURM_MBPT_EXTRA \
@@ -75,6 +77,7 @@ if [[ "$MBPT_GPU" != 0 && "$HAS_GPU_METHODS" == 1 ]]; then
     # mbpt.exe --kernel GPU uses the on-node GPU. Set SLURM_MBPT_GPU_GRES to
     # "--gres=gpu:N" on clusters that schedule GPUs as a resource.
     MBPT_GPU_JID=$(sbatch --parsable \
+        --job-name="${GREEN_VER}-${SYSTEM}-mbptgpu" \
         --export="$EXPORTS,MBPT_KERNEL=GPU,MBPT_SUBDIR=mbpt_gpu" \
         --dependency=afterok:$INIT_JID \
         --nodes="$SLURM_MBPT_GPU_NODES" --ntasks-per-node="$SLURM_MBPT_GPU_NTASKS_PER_NODE" \
@@ -95,6 +98,7 @@ if [[ -n "$MBPT_GPU_JID" && "$AC_GPU" != 0 ]]; then
     # SLURM_AC_* resources, same AUX partition) — only the source mbpt dir and
     # the output dir differ.
     AC_GPU_JID=$(sbatch --parsable \
+        --job-name="${GREEN_VER}-${SYSTEM}-acgpu" \
         --export="$EXPORTS,AC_SUBDIR=ac_gpu,MBPT_SUBDIR_FOR_AC=mbpt_gpu" \
         --dependency=afterok:$MBPT_GPU_JID \
         --nodes="$SLURM_AC_NODES" --ntasks-per-node="$SLURM_AC_NTASKS_PER_NODE" \
@@ -106,6 +110,7 @@ fi
 
 # AC — analytic continuation (on the CPU MBPT output).
 AC_JID=$(sbatch --parsable --export="$EXPORTS" \
+    --job-name="${GREEN_VER}-${SYSTEM}-ac" \
     --dependency=afterok:$MBPT_JID \
     --nodes="$SLURM_AC_NODES" --ntasks-per-node="$SLURM_AC_NTASKS_PER_NODE" \
     --cpus-per-task="$SLURM_AC_CPUS" --time="$SLURM_AC_TIME" \
