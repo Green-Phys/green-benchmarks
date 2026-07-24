@@ -25,7 +25,10 @@ init:
   xc: pbe     # DFT-PBE mean-field starting point for init_data_df.py
 
 mesh:
-  k: [3, 3, 3]
+  # Na is q9 (gth-pbe): 9 e-/cell is odd. A spin-0 unrestricted mean field
+  # needs an even total over the k-set (Nalpha=Nbeta), so nkpts must be even.
+  # 3x3x3=27 gives 9*27=243 (odd) -> RuntimeError. 4x4x4=64 -> 576 (even).
+  k: [4, 4, 4]
   beta: 100
   grid_file: ir/1e5.h5
 
