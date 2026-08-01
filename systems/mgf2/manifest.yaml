@@ -35,4 +35,4 @@ mesh:
   grid_file: ir/1e5.h5
 
 methods:
-  - { type: gw, itermax: 30, threshold: 1.0e-7 }
+  - { type: gw, itermax: 9, threshold: 1.0e-7 }
