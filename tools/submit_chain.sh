@@ -34,6 +34,23 @@ source "$BENCH_ROOT/env.sh"
 : "${SLURM_MBPT_GPU_CPUS:=8}";           : "${SLURM_MBPT_GPU_TIME:=06:00:00}"
 : "${SLURM_MBPT_GPU_GRES=}";             : "${SLURM_MBPT_GPU_EXTRA=--exclusive}"  # '=' keeps an explicit empty
 
+: "${RUN_MODE:=BOTH}"
+RUN_MODE="${RUN_MODE^^}"
+if [[ "$RUN_MODE" == "BOTH" ]]; then
+    RUN_CPU=1
+    RUN_GPU=1
+elif [[ "$RUN_MODE" == "CPU" ]]; then
+    RUN_CPU=1
+    RUN_GPU=0
+elif [[ "$RUN_MODE" == "GPU" ]]; then
+    RUN_CPU=0
+    RUN_GPU=1
+else
+    echo "Error: RUN_MODE must be one of: (none), BOTH, CPU, GPU" >&2
+    exit 1
+fi
+
+
 export MANIFEST="$BENCH_ROOT/systems/$SYSTEM/manifest.yaml"
 EXPORTS="ALL,BENCH_ROOT,BENCH_SCRATCH,SYSTEM,MANIFEST,GREEN_VER"
 
@@ -55,14 +72,17 @@ INIT_JID=$(sbatch --parsable --export="$EXPORTS" \
 
 # MBPT — the heavy MPI job. $SLURM_MBPT_EXTRA is intentionally unquoted so an
 # empty value expands to nothing and e.g. "--exclusive" expands to a flag.
-MBPT_JID=$(sbatch --parsable --export="$EXPORTS" \
-    --job-name="${GREEN_VER}-${SYSTEM}-mbpt" \
-    --dependency=afterok:$INIT_JID \
-    --nodes="$SLURM_MBPT_NODES" --ntasks-per-node="$SLURM_MBPT_NTASKS_PER_NODE" \
-    --cpus-per-task="$SLURM_MBPT_CPUS" --time="$SLURM_MBPT_TIME" $SLURM_MBPT_EXTRA \
-    --partition="$SLURM_PARTITION_MBPT" \
-    --output="$LOG_MBPT" \
-    "$BENCH_ROOT/templates/mbpt.sbatch")
+MBPT_JID=""
+if [[ "$RUN_CPU" == 1 ]]; then
+    MBPT_JID=$(sbatch --parsable --export="$EXPORTS" \
+        --job-name="${GREEN_VER}-${SYSTEM}-mbpt" \
+        --dependency=afterok:$INIT_JID \
+        --nodes="$SLURM_MBPT_NODES" --ntasks-per-node="$SLURM_MBPT_NTASKS_PER_NODE" \
+        --cpus-per-task="$SLURM_MBPT_CPUS" --time="$SLURM_MBPT_TIME" $SLURM_MBPT_EXTRA \
+        --partition="$SLURM_PARTITION_MBPT" \
+        --output="$LOG_MBPT" \
+        "$BENCH_ROOT/templates/mbpt.sbatch")
+fi
 
 # MBPT on GPU (mbpt.exe --kernel GPU) — extra MBPT-only job on the GPU
 # partition, depends on the same init, writes to a separate mbpt_gpu/ dir.
@@ -70,7 +90,7 @@ MBPT_JID=$(sbatch --parsable --export="$EXPORTS" \
 # defines a gpu_methods: plan; otherwise there's nothing to run on GPU.
 HAS_GPU_METHODS=$(python -c "import sys; sys.path.insert(0,'$BENCH_ROOT/tools'); from _lib import load_manifest, has_gpu_methods; print(1 if has_gpu_methods(load_manifest('$MANIFEST')) else 0)")
 MBPT_GPU_JID=""
-if [[ "$MBPT_GPU" != 0 && "$HAS_GPU_METHODS" == 1 ]]; then
+if [[ "$RUN_GPU" == 1 && "$HAS_GPU_METHODS" == 1 ]]; then
     # $SLURM_MBPT_GPU_GRES / $SLURM_MBPT_GPU_EXTRA are intentionally unquoted so
     # an empty value expands to nothing. On pauli the GPU nodes carry no gpu
     # gres, so GRES is empty and the job takes the whole node via --exclusive;
@@ -109,13 +129,16 @@ if [[ -n "$MBPT_GPU_JID" && "$AC_GPU" != 0 ]]; then
 fi
 
 # AC — analytic continuation (on the CPU MBPT output).
-AC_JID=$(sbatch --parsable --export="$EXPORTS" \
-    --job-name="${GREEN_VER}-${SYSTEM}-ac" \
-    --dependency=afterok:$MBPT_JID \
-    --nodes="$SLURM_AC_NODES" --ntasks-per-node="$SLURM_AC_NTASKS_PER_NODE" \
-    --cpus-per-task="$SLURM_AC_CPUS" --time="$SLURM_AC_TIME" \
-    --partition="$SLURM_PARTITION_AUX" \
-    --output="$LOG_AC" \
-    "$BENCH_ROOT/templates/ac.sbatch")
+AC_JID=""
+if [[ "$RUN_CPU" == 1 ]]; then
+    AC_JID=$(sbatch --parsable --export="$EXPORTS" \
+        --job-name="${GREEN_VER}-${SYSTEM}-ac" \
+        --dependency=afterok:$MBPT_JID \
+        --nodes="$SLURM_AC_NODES" --ntasks-per-node="$SLURM_AC_NTASKS_PER_NODE" \
+        --cpus-per-task="$SLURM_AC_CPUS" --time="$SLURM_AC_TIME" \
+        --partition="$SLURM_PARTITION_AUX" \
+        --output="$LOG_AC" \
+        "$BENCH_ROOT/templates/ac.sbatch")
+fi
 
-echo "queued: init=$INIT_JID  mbpt=$MBPT_JID  mbpt_gpu=${MBPT_GPU_JID:-skipped}  ac=$AC_JID  ac_gpu=${AC_GPU_JID:-skipped}  (system=$SYSTEM ver=$GREEN_VER)"
+echo "queued: init=$INIT_JID  mbpt=${MBPT_JID:-skipped}  mbpt_gpu=${MBPT_GPU_JID:-skipped}  ac=${AC_JID:-skipped}  ac_gpu=${AC_GPU_JID:-skipped}  (system=$SYSTEM ver=$GREEN_VER mode=$RUN_MODE)"
