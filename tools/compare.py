@@ -13,11 +13,8 @@ FILES = {
     "v100_gpu": "v100a1_1.0.0a2_gpu.json",
 }
 
-# Absolute precision below which a result difference is treated as
-# numerical noise rather than a real physical difference.
-#
-# 1e-7 Ha is the GW self-consistency convergence criterion set in the
-# per-system config [manifest files] (`methods: [{type: gw, ..., threshold: 1.0e-7}]`).
+# Output precision for physical-result differences.
+# Differences smaller than 1e-7 are displayed as zero.
 DIFF_THRESHOLD = 1e-7
 DIFF_DECIMALS = 7
 
@@ -27,6 +24,16 @@ DIFF_DECIMALS = 7
 ENERGY_UNIT = "Ha"
 SPECTRAL_UNIT = "eV"
 
+SYSTEM_LABELS = {
+    "n2": "n2 (Molecule)",
+}
+
+SYSTEM_NOTES = {
+    "ge_x2c1e": (
+        "> **Note:** This benchmark is currently failing; "
+        "the results are included for reference."
+    ),
+}
 
 def load_json(path):
     if not path.exists():
@@ -55,11 +62,9 @@ def ratio(a, b):
 
 def fmt_diff(value, unit):
     """
-    Fixed absolute precision for physical-result differences: rounded
-    to DIFF_DECIMALS places (i.e. to the DIFF_THRESHOLD scale) and
-    tagged with its unit. Differences below the threshold are treated
-    as numerical noise and shown as a plain "0" (no unit, since a null
-    result carries no meaningful unit either).
+    Fixed absolute precision for physical-result differences. Values are
+    rounded to DIFF_DECIMALS places and tagged with their unit.
+    Differences below DIFF_THRESHOLD are shown as a plain "0".
     """
     if value is None:
         return "—"
@@ -178,10 +183,11 @@ def main():
         "- `CPU v032-v100` = v032 CPU - v100 CPU",
         "- `GPU v032-v100` = v032 GPU - v100 GPU",
         "",
-        f"Differences are rounded to {DIFF_DECIMALS} decimal places "
-        f"(~{DIFF_THRESHOLD:g}), a stand-in for the SCF/GW convergence "
-        "threshold. Anything smaller is numerical noise and shown as "
-        "`0`. Energies (`e1b`, `ecorr`, `ehf`) are in Hartree; "
+       f"Differences are rounded to {DIFF_DECIMALS} decimal places "
+        f"(~{DIFF_THRESHOLD:g}). Anything smaller is shown as `0`. "
+        "The input DFT calculation is performed without symmetry and "
+        "has an asymmetry of ~1e-6. "
+        "Energies (`e1b`, `ecorr`, `ehf`) are in Hartree; "
         "band/gap quantities (`cbm`, `vbm`, `*_gap*`, `homo`, `lumo`, "
         "`ip_koopmans`) are in electronvolts.",
         "",
@@ -215,9 +221,13 @@ def main():
             for name, data in datasets.items()
         }
 
-        lines.append(f"## {system}")
-        lines.append("")
+        system_label = SYSTEM_LABELS.get(system, system)
 
+        lines.append(f"## {system_label}")
+        lines.append("")
+        if system in SYSTEM_NOTES:
+            lines.append(SYSTEM_NOTES[system])
+            lines.append("")
         # ==========================================================
         # PHYSICAL RESULTS
         # ==========================================================

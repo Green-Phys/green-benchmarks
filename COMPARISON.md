@@ -9,7 +9,7 @@ Result differences are calculated as:
 - `CPU v032-v100` = v032 CPU - v100 CPU
 - `GPU v032-v100` = v032 GPU - v100 GPU
 
-Differences are rounded to 7 decimal places (~1e-07), a stand-in for the SCF/GW convergence threshold. Anything smaller is numerical noise and shown as `0`. Energies (`e1b`, `ecorr`, `ehf`) are in Hartree; band/gap quantities (`cbm`, `vbm`, `*_gap*`, `homo`, `lumo`, `ip_koopmans`) are in electronvolts.
+Differences are rounded to 7 decimal places (~1e-07). Anything smaller is shown as `0`. The input DFT calculation is performed without symmetry and has an asymmetry of ~1e-6. Energies (`e1b`, `ecorr`, `ehf`) are in Hartree; band/gap quantities (`cbm`, `vbm`, `*_gap*`, `homo`, `lumo`, `ip_koopmans`) are in electronvolts.
 
 Timing ratios are calculated as:
 
@@ -141,6 +141,8 @@ For timing ratios, values > 1 mean that v100 is faster than v032.
 
 ## ge_x2c1e
 
+> **Note:** This benchmark is currently failing; the results are included for reference.
+
 ### Results differences
 
 | observable | v032 CPU-GPU | v100 CPU-GPU | CPU v032-v100 | GPU v032-v100 |
@@ -257,7 +259,7 @@ For timing ratios, values > 1 mean that v100 is faster than v032.
 | `gw/hf` | 1.3126x | — |
 | `gw/total` | 2.0868x | 1.1561x |
 
-## n2
+## n2 (Molecule)
 
 ### Results differences
 
