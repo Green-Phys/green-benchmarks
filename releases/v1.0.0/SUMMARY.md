@@ -13,8 +13,10 @@ the auto-generated tables — do not restate numbers elsewhere, link to these:
 
 ## TL;DR
 
-1. **Agreement.** Across the suite, total energies from v0.3.2 and v1.0.0
-   agree to the convergence threshold (≲1e-7 Ha), on both CPU and GPU.
+1. **Agreement, and a CPU speedup.** Across the suite, total energies from
+   v0.3.2 and v1.0.0 agree to the convergence threshold (≲1e-7 Ha) on both CPU
+   and GPU — at up to **~4× lower CPU wall-clock** from v1.0.0's rewritten
+   k-point symmetry code (Silicon, 4×4×4).
 2. **A CPU bug is fixed.** `ge_x2c1e` (all-electron, full X2C spinor path)
    was broken on the v0.3.2 **CPU** kernel. v1.0.0 fixes it; CPU now matches
    the (always-correct) GPU path.
@@ -25,12 +27,23 @@ the auto-generated tables — do not restate numbers elsewhere, link to these:
 
 ---
 
-## 1. Cross-version agreement
+## 1. Cross-version agreement — same physics, faster
 
 For the bulk of the suite, v0.3.2 and v1.0.0 produce the same physics. The
 scalar totals — `ehf`, `e1b`, `ecorr` — agree to the 1e-7 Ha GW/SCF
 convergence threshold across CPU and GPU (see the `CPU v032-v100` and
 `GPU v032-v100` columns in [`COMPARISON.md`](COMPARISON.md)).
+
+**And v1.0.0's CPU path is substantially faster**, from its rewritten k-point
+symmetry code. The wall-clock speedup grows with the **number of k-points**:
+the more k-points in the star, the more work the symmetry machinery saves, so
+denser meshes gain the most (the `CPU v032/v100` column in
+[`COMPARISON.md`](COMPARISON.md), where >1 means v1.0.0 is faster): ~1.4–4.2×
+across the solids. **Silicon is the headline** — the suite's largest mesh at
+4×4×4 (64 k-points) — where v1.0.0 CPU runs **4.18× faster in GW total and
+4.25× in GF2 total** (HF 2.10×) at identical energies. The molecular case
+(`n2`, a single k-point, no symmetry to exploit) shows no speedup (~0.97×),
+exactly as expected.
 
 Two honest caveats, so the tables aren't over-read:
 
