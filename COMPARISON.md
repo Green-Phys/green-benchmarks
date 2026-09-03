@@ -141,28 +141,26 @@ For timing ratios, values > 1 mean that v100 is faster than v032.
 
 ## ge_x2c1e
 
-> **Note:** This benchmark is currently failing; the results are included for reference.
-
 ### Results differences
 
 | observable | v032 CPU-GPU | v100 CPU-GPU | CPU v032-v100 | GPU v032-v100 |
 |---|---:|---:|---:|---:|
-| `gw/cbm` | — | — | — | -0.7614004 eV |
-| `gw/direct_gap_gamma` | — | — | — | -1.4684151 eV |
-| `gw/e1b` | -2.1896658 Ha | -2.1896616 Ha | -0.0000039 Ha | 0.0000002 Ha |
-| `gw/ecorr` | 0.6425008 Ha | 0.6425009 Ha | 0 | 0 |
-| `gw/ehf` | -215.2604849 Ha | -215.2604853 Ha | 0.0000003 Ha | 0 |
-| `gw/indirect_gap` | — | — | — | -0.6798218 eV |
-| `gw/vbm` | — | — | — | -0.0815786 eV |
-| `hf/e1b` | 1.4000915 Ha | 1.0882726 Ha | -0.0000211 Ha | -0.3118400 Ha |
+| `gw/cbm` | — | 0.1631572 eV | — | -0.7614004 eV |
+| `gw/direct_gap_gamma` | — | -0.5710503 eV | — | -1.4684151 eV |
+| `gw/e1b` | -2.1896658 Ha | 0 | -2.1896656 Ha | 0.0000002 Ha |
+| `gw/ecorr` | 0.6425008 Ha | 0 | 0.6425008 Ha | 0 |
+| `gw/ehf` | -215.2604849 Ha | 0 | -215.2604850 Ha | 0 |
+| `gw/indirect_gap` | — | 0.1359644 eV | — | -0.6798218 eV |
+| `gw/vbm` | — | 0.0271929 eV | — | -0.0815786 eV |
+| `hf/e1b` | 1.4000915 Ha | -1.3011468 Ha | 2.3893983 Ha | -0.3118400 Ha |
 | `hf/ecorr` | 0 | 0 | 0 | 0 |
-| `hf/ehf` | -214.9513981 Ha | -214.9515056 Ha | 0.0000003 Ha | -0.0001072 Ha |
+| `hf/ehf` | -214.9513981 Ha | 0.0002489 Ha | -214.9517542 Ha | -0.0001072 Ha |
 
 ### Timing comparison
 
 | timing | CPU v032/v100 | GPU v032/v100 |
 |---|---:|---:|
-| `gw/total` | 4.0406x | 1.3982x |
+| `gw/total` | 1.4422x | 1.3982x |
 
 ## lih
 
