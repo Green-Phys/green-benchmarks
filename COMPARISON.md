@@ -31,9 +31,9 @@ For timing ratios, values > 1 mean that v100 is faster than v032.
 | `gw/ehf` | 0 | 0 | 0 | 0 |
 | `gw/indirect_gap` | 0 | 0 | 0 | 0 |
 | `gw/vbm` | 0 | 0 | 0 | 0 |
-| `hf/e1b` | — | — | — | -0.0000125 Ha |
+| `hf/e1b` | — | — | — | 0.0000306 Ha |
 | `hf/ecorr` | — | — | — | 0 |
-| `hf/ehf` | — | — | — | 0 |
+| `hf/ehf` | — | — | — | 0.0000008 Ha |
 
 ### Timing comparison
 
@@ -127,9 +127,9 @@ For timing ratios, values > 1 mean that v100 is faster than v032.
 | `gw/ehf` | 0.0000004 Ha | 0.0000004 Ha | 0 | 0 |
 | `gw/indirect_gap` | -0.4078931 eV | -0.4622788 eV | 0.0815786 eV | 0.0271929 eV |
 | `gw/vbm` | 0.5166646 eV | 0.1903501 eV | 0.0815786 eV | -0.2447358 eV |
-| `hf/e1b` | -1.4962414 Ha | -3.6673794 Ha | 0.0000042 Ha | -2.1711338 Ha |
+| `hf/e1b` | 0 | 0 | -0.0000242 Ha | -0.0000242 Ha |
 | `hf/ecorr` | 0 | 0 | 0 | 0 |
-| `hf/ehf` | 0.0055467 Ha | 0.0046353 Ha | -0.0000001 Ha | -0.0009115 Ha |
+| `hf/ehf` | 0 | 0 | -0.0000008 Ha | -0.0000008 Ha |
 
 ### Timing comparison
 
@@ -152,9 +152,9 @@ For timing ratios, values > 1 mean that v100 is faster than v032.
 | `gw/ehf` | -215.2604849 Ha | 0 | -215.2604850 Ha | 0 |
 | `gw/indirect_gap` | — | 0.1359644 eV | — | -0.6798218 eV |
 | `gw/vbm` | — | 0.0271929 eV | — | -0.0815786 eV |
-| `hf/e1b` | 1.4000915 Ha | -1.3011468 Ha | 2.3893983 Ha | -0.3118400 Ha |
+| `hf/e1b` | 0 | 0 | -0.0000256 Ha | -0.0000256 Ha |
 | `hf/ecorr` | 0 | 0 | 0 | 0 |
-| `hf/ehf` | -214.9513981 Ha | 0.0002489 Ha | -214.9517542 Ha | -0.0001072 Ha |
+| `hf/ehf` | -214.3305880 Ha | 0 | -214.3305887 Ha | -0.0000007 Ha |
 
 ### Timing comparison
 
@@ -222,9 +222,9 @@ For timing ratios, values > 1 mean that v100 is faster than v032.
 | `gw/ehf` | 0.0001542 Ha | 0.0001542 Ha | 0 | 0 |
 | `gw/indirect_gap` | 0.0271929 eV | 0.0271929 eV | 0 | 0 |
 | `gw/vbm` | -0.0271929 eV | -0.0271929 eV | 0 | 0 |
-| `hf/e1b` | — | — | — | -0.0307051 Ha |
+| `hf/e1b` | — | — | — | 0.0000001 Ha |
 | `hf/ecorr` | — | — | — | 0 |
-| `hf/ehf` | — | — | — | -0.0000073 Ha |
+| `hf/ehf` | — | — | — | 0 |
 
 ### Timing comparison
 
