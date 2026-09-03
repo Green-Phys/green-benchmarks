@@ -19,8 +19,16 @@ system:
 
 basis:
   name: gth-dzvp-molopt-sr
-  auxbasis: none
-  etb_beta: 2.5
+  # Explicit RI aux basis. The auto-generated even-tempered aux (auxbasis: none,
+  # etb_beta: 2.5) is near-linearly-dependent for this cell: j2c condition number
+  # ~1e16, so the metric eigendecomposition drops a *ragged*, q-dependent number
+  # of aux vectors. Under v1.0.0's aux-space symmetry reduction that makes
+  # symmetry/q/k_sym_transform_p0 ill-defined (ragged rank 93-96/108 across the
+  # star), corrupting the density-fitted integrals at the reconstructed q-points
+  # (HF off ~20 mHa, E_corr off ~40 mHa vs v0.3.2). An explicit,
+  # well-conditioned aux basis avoids this: no dropped functions, uniform
+  # full-rank p0 across the star.
+  auxbasis: def2-universal-jkfit
 
 init:
   xc: pbe     # DFT-PBE mean-field starting point for init_data_df.py
