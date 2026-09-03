@@ -143,10 +143,16 @@ one-paragraph summary keyed off `--obs-tol-percent`
 (default 0.5%) and `--time-tol-percent` (default 20%). Tighten the
 paragraph for the release notes.
 
+The tools write `RESULTS.md` / `COMPARISON.md` to the repo root. The
+committed copies live per release under `releases/<version>/` (next to that
+release's hand-written `SUMMARY.md`) — move the freshly generated tables
+there before committing.
+
 ### 2.4 Commit
 
 ```bash
-git add systems/*/results/*.json RESULTS.md
+mv RESULTS.md COMPARISON.md releases/<version>/
+git add systems/*/results/*.json releases/<version>/RESULTS.md releases/<version>/COMPARISON.md
 git commit -m "Results for green-mbpt <mbpt-ver> + green-mbtools <mbtools-ver>"
 git push
 ```

@@ -19,7 +19,8 @@ systems/
   h_chain/      1D periodic correlation
   <13 solids>/  GW symmetry-coverage set — see "Solid-state coverage" below
 tools/          collection, diff, manifest lint, version comparison
-RESULTS.md      generated comparison table (do not hand-edit)
+releases/       per-release benchmark write-ups (SUMMARY + generated
+                RESULTS.md / COMPARISON.md tables; do not hand-edit tables)
 ```
 
 Each system has `manifest.yaml` (the run contract), `results/` (one JSON
@@ -75,7 +76,9 @@ Initial round:
 | green-mbtools | `0.3.0`, `1.0.0-alpha` |
 
 Results land in `systems/<sys>/results/<mbpt-version>_<mbtools-version>.json`
-and aggregate to [`RESULTS.md`](RESULTS.md).
+and aggregate to [`releases/v1.0.0/RESULTS.md`](releases/v1.0.0/RESULTS.md)
+(see [`releases/v1.0.0/SUMMARY.md`](releases/v1.0.0/SUMMARY.md) for the
+narrative).
 
 ## Quick links
 
